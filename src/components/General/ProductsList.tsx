@@ -6,6 +6,7 @@ import { EmblaOptionsType } from 'embla-carousel'
 
 type PropsType = {
   title?: string
+  categoryName?: string
   products: Product[]
   showCartBtn?: boolean
   className?: string
@@ -33,6 +34,7 @@ const settings: EmblaOptionsType = {
 
 const ProductsList = ({
   products,
+  categoryName,
   showCartBtn,
   className,
   title = '',
@@ -44,6 +46,9 @@ const ProductsList = ({
       ? 'grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6'
       : 'space-y-6'
 
+  // console.log('products', products)
+  // console.log('categoryName', categoryName)
+
   return (
     <section className={`w-full px-4 ${className}`}>
       <div className='w-full'>
@@ -54,6 +59,7 @@ const ProductsList = ({
               <ProductCard
                 key={product._id}
                 product={product}
+                categoryName={categoryName}
                 showCartBtn={showCartBtn}
                 viewMode={viewMode}
                 className={`${

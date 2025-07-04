@@ -23,6 +23,7 @@ import CustomSlider from './CustomSlider'
 type ProductCardProps = {
   product: Product
   showCartBtn?: boolean
+  categoryName?: string
   className?: string
   viewMode?: 'grid' | 'list'
 }
@@ -30,6 +31,7 @@ type ProductCardProps = {
 const ProductCard = memo(
   ({
     product,
+    categoryName,
     showCartBtn = true,
     className,
     viewMode = 'grid',
@@ -50,7 +52,7 @@ const ProductCard = memo(
         product.images.some((img) => !!img)
       )
     }, [product.images])
-    // console.log(product.name, product._id, hasImages, product.images);
+
     const cartProducts = useAppSelector((state) => state.cart.products)
     const cartItem = cartProducts.find(
       (item) => item.product?._id === product._id
@@ -75,7 +77,6 @@ const ProductCard = memo(
           cartActions.addToCart({
             product: product,
             quantity: 1,
-            // isAuthenticated: !!session?.user,
           })
         )
 
@@ -95,7 +96,6 @@ const ProductCard = memo(
         dispatch(
           cartActions.removeFromCart({
             productId: product._id,
-            // isAuthenticated: !!session?.user,
           })
         )
 
@@ -120,17 +120,12 @@ const ProductCard = memo(
       setImageError(true)
     }
 
-    // Default image URL
-    const imageUrl =
-      'https://komas500.s3.eu-north-1.amazonaws.com/products/1-product-stockings-test-1740343084936.jpeg'
-
-    // Determine if we should show images or placeholder
-    // const shouldShowImages = hasImages && !imageError;
-
     return (
       <Card
         key={product._id}
-        className={`group hover:shadow-lg transition-shadow h-full ${className}`}
+        className={`group hover:shadow-lg transition-shadow h-full ${
+          isGrid ? 'w-full max-w-sm' : 'w-full'
+        } ${className}`}
       >
         <div
           className={`flex flex-col justify-between h-full w-full ${
@@ -224,9 +219,10 @@ const ProductCard = memo(
           >
             <Link href={`/product/${product._id}`} className='flex-grow'>
               <p className='text-sm text-gray-500 mb-1 truncate'>
-                {typeof product.category === 'string'
-                  ? product.category
-                  : product.category?.name}
+                {typeof product.category === 'object' &&
+                product.category !== null
+                  ? product.category.name
+                  : categoryName || 'Category'}
               </p>
               <h3 className='font-medium mb-2 group-hover:text-[#3bb77e] transition-colors line-clamp-2'>
                 {product.name}

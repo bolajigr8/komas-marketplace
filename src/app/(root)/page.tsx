@@ -275,9 +275,39 @@ const DisplayCategoriesAndProducts = async ({
     products.data?.products || []
   )
 
-  const sortedCategories = [...(categories.data || [])].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  )
+  // categories ways to show up
+
+  // 1. Filter categories that have products using productsByCategories
+  const sortedCategories = [...(categories.data || [])]
+    .filter((category) => productsByCategories[category._id]?.length > 0)
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+
+  // 2. Alternative: If you want to also filter by approved products only
+  const sortedCategoriesWithApprovedProducts = [...(categories.data || [])]
+    .filter((category) =>
+      (productsByCategories[category._id] || []).some(
+        (product) => product.status === 'approved'
+      )
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+
+  // 3. Alternative: If you want categories with active/live products only
+  const sortedCategoriesWithLiveProducts = [...(categories.data || [])]
+    .filter((category) =>
+      (productsByCategories[category._id] || []).some(
+        (product) => product.isLive === true && !product.isDeleted
+      )
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
 
   const filteredProducts = (products.data?.products || []).filter(
     (product) => product.isApproved && !product.isDeleted && product.isLive
@@ -290,6 +320,8 @@ const DisplayCategoriesAndProducts = async ({
   const latest10ProductsFirst = sortedProducts.slice(0, 10)
   const latest10ProductsSecond = sortedProducts.slice(10, 20)
 
+  // console.log(categories, 'categories')
+
   // console.log(products.data?.products, 'product')
   // console.log(latest10ProductsSecond)
 
@@ -297,10 +329,10 @@ const DisplayCategoriesAndProducts = async ({
     <>
       <CategoryList
         title='Categories'
-        categories={sortedCategories}
+        categories={sortedCategoriesWithApprovedProducts}
         getItemsLengthFor='allProducts'
         selectedCategory={category}
-        baseRoute='/category/?query='
+        baseRoute='/category/'
       />
 
       <ProductsList

@@ -25,7 +25,7 @@ type PropsType = {
 const slides = [
   {
     id: 1,
-    image: '/images/Home/slide1.webp',
+    image: '/Images/Home/slide1.webp',
     // title: "Shop Global, Delivered Local",
     // subtitle: "Fast same-day delivery from ₦200",
     title: 'Transform Your Space',
@@ -33,7 +33,7 @@ const slides = [
   },
   {
     id: 2,
-    image: '/images/Home/slide2.webp',
+    image: '/Images/Home/slide2.webp',
     // title: "Quality Products, Amazing Prices",
     // subtitle: "Shop with confidence from verified sellers",
     itle: 'Shop Smart, Live Smart',
@@ -41,7 +41,7 @@ const slides = [
   },
   {
     id: 3,
-    image: '/images/Home/slide3.webp',
+    image: '/Images/Home/slide3.webp',
     title: 'Flash Sales & Deals',
     subtitle: 'Up to 70% off on trending items',
   },
