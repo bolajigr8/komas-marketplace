@@ -7,15 +7,12 @@ export const getCategories = async (
   query?: string
 ): Promise<FetchResult<Category[] | null>> => {
   try {
-    const res = await customFetch(
-      `/product/category${query ? `?name=${query}` : ''}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+    const res = await customFetch(`/product/category`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
 
     return await res.json()
   } catch (error: any) {
