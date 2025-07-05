@@ -218,11 +218,11 @@ const PickupStations: React.FC<PickupStationProps> = ({
                 </div>
               </div>
             </ModalBody>
-            <ModalFooter>
+            <ModalFooter className='flex flex-col sm:flex-row gap-2 sm:gap-0'>
               <Button
                 color='secondary'
                 onPress={() => onOpenChange(false)}
-                className='mr-2'
+                className='w-full sm:w-auto sm:mr-2 order-2 sm:order-1'
               >
                 Cancel
               </Button>
@@ -230,6 +230,7 @@ const PickupStations: React.FC<PickupStationProps> = ({
                 color='primary'
                 onPress={handleConfirm}
                 isDisabled={!selectedStation}
+                className='w-full sm:w-auto order-1 sm:order-2'
               >
                 Select Pickup Station
               </Button>

@@ -190,9 +190,17 @@ const ProductCard = memo(
                     <Image
                       src={`${process.env.NEXT_PUBLIC_AWS_URL}/products/${product.images}`}
                       alt={product.name}
+                      // width={700}
+                      // height={700}
                       fill
-                      sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw'
-                      className='object-cover rounded-t-lg'
+                      // sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw'
+                      // className='object-cover rounded-t-lg'
+                      sizes={
+                        isGrid
+                          ? '(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                          : '(max-width: 640px) 100vw, 33vw'
+                      }
+                      className='object-contain md:object-cover object-center rounded-t-lg transition-transform duration-300 group-hover:scale-105'
                       priority
                       onLoad={() => setIsImageLoaded(true)}
                       onError={handleImageError}

@@ -262,12 +262,11 @@ export const getVendorProductsByName = async ({
 //     }
 //   }
 // }
+
 export const getCartProducts = async (): Promise<
   FetchResult<CartItem[] | null>
 > => {
   try {
-    console.log('Fetching cart products...')
-
     const res = await fetchWithAuth(`/cart`, {
       method: 'GET',
       headers: {
@@ -275,12 +274,8 @@ export const getCartProducts = async (): Promise<
       },
     })
 
-    console.log('Get cart products response status:', res.status)
-
-    // Check if the response is ok before parsing JSON
     if (!res.ok) {
       const errorText = await res.text()
-      console.error('Get cart products failed:', errorText)
       return {
         statusCode: res.status,
         hasError: true,
@@ -290,20 +285,17 @@ export const getCartProducts = async (): Promise<
     }
 
     const result = await res.json()
-    console.log('Get cart products successful:', result)
-
     return result
   } catch (error: any) {
-    console.error('Get cart products error:', error)
+    console.error('Get cart products error:', error.message)
     return {
       statusCode: error.status || 500,
       hasError: true,
-      message: error.message || 'Hardcoded: Failed to get cart products',
+      message: error.message || 'Failed to get cart products',
       data: null,
     }
   }
 }
-
 export const addProductToCart = async ({
   productId,
   quantity,

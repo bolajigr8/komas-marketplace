@@ -64,77 +64,161 @@ const AuthForm = <T extends Action>({
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const { products: cartProducts } = useAppSelector((state) => state.cart)
-  // const { data: session, status } = useSession();
-  // const isLoggedIn = !!session?.user;
   const router = useRouter()
   const { toast } = useToast()
   const [isFetching, setIsFetching] = useState(false)
 
-  // useEffect(() => {
-  //   async function initialCartSync() {
-  //     if (!isLoggedIn || status === "loading" || isFetching) return;
-
-  //     setIsFetching(true);
-  //     try {
-  //       const response = await getCartProducts();
-  //       const serverCartItems = response?.data || [];
-
-  //       if (serverCartItems.length > 0) {
-  //         serverCartItems.map((item) => {
-  //           dispatch(
-  //             cartActions.addToCart({
-  //               product: item.product,
-  //               quantity: item.quantity,
-  //             })
-  //           );
-  //         });
-  //       }
-  //     } catch (error) {
-  //       console.error("Failed to fetch server cart:", error);
-  //     } finally {
-  //       setIsFetching(false);
-  //     }
-  //   }
-
-  //   initialCartSync();
-  // }, [dispatch, isLoggedIn, status, isFetching]);
-
   const syncServerCart = async () => {
     try {
       setIsFetching(true)
+
+      console.log('Starting cart sync...')
+      console.log('Current local cart:', cartProducts)
 
       const serverCartResponse = await getCartProducts()
       if (serverCartResponse.hasError) {
         throw new Error(serverCartResponse.message)
       }
 
-      const serverCart =
-        serverCartResponse.data?.map((item) => ({
-          product: item.product,
-          quantity: item.quantity,
-        })) || []
+      const serverCartItems = serverCartResponse.data || []
+      console.log('Server cart items:', serverCartItems)
 
-      const cart = [...cartProducts, ...serverCart]
-      dispatch(
-        cartActions.setCart({
-          cartItems: cart,
+      // Convert server cart to the format expected by Redux
+      const serverCart = serverCartItems.map((item) => ({
+        product: item.product,
+        quantity: item.quantity,
+      }))
+
+      // Handle empty carts
+      if (serverCart.length === 0 && cartProducts.length === 0) {
+        toast({
+          description: 'Cart synchronized successfully',
         })
+        return true
+      }
+
+      // Server cart is empty, but local cart has items - sync all local items to server
+      if (serverCart.length === 0) {
+        console.log('Server cart empty, syncing all local items to server...')
+
+        const syncPromises = cartProducts.map((localItem) => {
+          const productId = localItem.product._id
+          if (productId) {
+            console.log(
+              `Syncing product ${productId} with quantity ${localItem.quantity}`
+            )
+            return addProductToCart({
+              productId: productId,
+              quantity: localItem.quantity,
+            })
+          }
+          return Promise.resolve()
+        })
+
+        try {
+          const syncResults = await Promise.all(syncPromises)
+          console.log('Sync results:', syncResults)
+
+          toast({
+            description: `${cartProducts.length} items synchronized to your account`,
+          })
+          return true
+        } catch (error) {
+          console.error('Failed to sync local items to server:', error)
+          toast({
+            description: 'Some items failed to sync. Please try again.',
+            variant: 'destructive',
+          })
+          return false
+        }
+      }
+
+      // Local cart is empty, use server cart
+      if (cartProducts.length === 0) {
+        dispatch(cartActions.setCart({ cartItems: serverCart }))
+        toast({
+          description: 'Your cart has been synchronized with your account',
+        })
+        return true
+      }
+
+      // Both carts have items - merge them intelligently
+      console.log('Both carts have items, merging...')
+      const mergedCart: CartItem[] = []
+      const processedProductIds = new Set<string>()
+      const itemsToSyncToServer: CartItem[] = []
+
+      // First, add all server cart items (server takes precedence)
+      serverCart.forEach((serverItem) => {
+        const productId = serverItem.product._id
+        if (productId) {
+          mergedCart.push(serverItem)
+          processedProductIds.add(productId)
+        }
+      })
+
+      // Then identify local cart items that don't exist in server cart
+      cartProducts.forEach((localItem) => {
+        const productId = localItem.product._id
+        if (productId && !processedProductIds.has(productId)) {
+          mergedCart.push(localItem)
+          itemsToSyncToServer.push(localItem)
+        }
+      })
+
+      console.log(
+        'Items to sync to server:',
+        itemsToSyncToServer.map((item) => ({
+          productId: item.product._id,
+          quantity: item.quantity,
+        }))
       )
 
-      console.log(cart)
-      // if (serverCart.length > 0) {
-      //   serverCart.map((item) => {
-      //     dispatch(
-      //       cartActions.addToCart({
-      //         product: item.product,
-      //         quantity: item.quantity,
-      //       })
-      //     );
-      //   });
-      // }
-      toast({
-        description: 'Your cart has been synchronized with your account',
-      })
+      // IMPORTANT: Sync local-only items to server FIRST before updating Redux
+      if (itemsToSyncToServer.length > 0) {
+        const syncPromises = itemsToSyncToServer.map((item) => {
+          const productId = item.product._id
+          if (productId) {
+            console.log(
+              `Syncing guest item - Product: ${productId}, Quantity: ${item.quantity}`
+            )
+            return addProductToCart({
+              productId: productId,
+              quantity: item.quantity,
+            })
+          }
+          return Promise.resolve()
+        })
+
+        try {
+          const syncResults = await Promise.all(syncPromises)
+          console.log('Guest items sync results:', syncResults)
+
+          // Update Redux store only after successful server sync
+          dispatch(cartActions.setCart({ cartItems: mergedCart }))
+
+          toast({
+            description: `Cart synchronized successfully. ${itemsToSyncToServer.length} guest items added to your account.`,
+          })
+        } catch (error) {
+          console.error('Failed to sync guest items to server:', error)
+
+          // Still update Redux with server items, but don't include failed local items
+          dispatch(cartActions.setCart({ cartItems: serverCart }))
+
+          toast({
+            description: `Failed to sync ${itemsToSyncToServer.length} guest items to your account. Please try adding them again.`,
+            variant: 'destructive',
+          })
+          return false
+        }
+      } else {
+        // No local items to sync, just use merged cart (server items only)
+        dispatch(cartActions.setCart({ cartItems: mergedCart }))
+        toast({
+          description: `Cart synchronized successfully. ${mergedCart.length} items in your cart.`,
+        })
+      }
 
       return true
     } catch (error) {
@@ -150,6 +234,8 @@ const AuthForm = <T extends Action>({
   }
 
   const onSubmit = async (data: FormValues<'register'>) => {
+    console.log('Form submitted for action:', action)
+
     if (action === 'register') {
       // Create a new user with the provided data
       const res = await createUser(data)
@@ -178,6 +264,9 @@ const AuthForm = <T extends Action>({
         ? router.replace(`/otp-verify?${searchParams.toString()}`)
         : router.push(`/otp-verify?${searchParams.toString()}`)
     } else if (action === 'login') {
+      console.log('Starting login process...')
+      console.log('Current cart before login:', cartProducts)
+
       // Login flow
       const res = await loginUser({
         username: data.emailAddress,
@@ -212,8 +301,14 @@ const AuthForm = <T extends Action>({
 
       // If login was successful
       if (res.data !== undefined) {
+        console.log('Login successful, starting cart sync...')
+
         // Sync carts after successful login
         const cartSyncSuccess = await syncServerCart()
+
+        if (!cartSyncSuccess) {
+          console.warn('Cart sync failed, but continuing with login flow')
+        }
 
         // Store 2FA preference
         localStorage.setItem('is2FAEnabled', (!res.data).toString())
@@ -226,6 +321,7 @@ const AuthForm = <T extends Action>({
         // Handle redirection based on 2FA requirement
         if (res.data) {
           // No 2FA needed, redirect to intended page or home
+          console.log('No 2FA required, redirecting...')
           if (replaceHistory) {
             router.replace(callbackUrl || '/')
           } else {
@@ -234,6 +330,7 @@ const AuthForm = <T extends Action>({
           onSuccess?.()
         } else {
           // 2FA needed, go to verification page
+          console.log('2FA required, redirecting to OTP verification...')
           const searchParams = new URLSearchParams({
             username: data.emailAddress,
             callbackUrl: callbackUrl || '',
@@ -378,12 +475,12 @@ const AuthForm = <T extends Action>({
 
       <Button
         type='submit'
-        isDisabled={form.formState.isSubmitting}
-        isLoading={form.formState.isSubmitting}
+        isDisabled={form.formState.isSubmitting || isFetching}
+        isLoading={form.formState.isSubmitting || isFetching}
         size='lg'
         className='bg-green-500 text-white font-semibold mt-4 rounded-lg'
       >
-        {form.formState.isSubmitting
+        {form.formState.isSubmitting || isFetching
           ? 'Submitting...'
           : action === 'register'
           ? 'Create Account'

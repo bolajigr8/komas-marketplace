@@ -18,7 +18,7 @@ const RootLayout = ({
       <CartProvider>
         <AppHeader />
         <NavHeader />
-        <CartSyncer />
+        {/* <CartSyncer /> */}
         {modal}
         {children}
         <Footer />
