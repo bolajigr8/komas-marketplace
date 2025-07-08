@@ -320,7 +320,12 @@ const VerifyUserOtp = ({
         {Array.from({ length: 4 }).map((_, index) => (
           <React.Fragment key={index}>
             <InputOTPGroup>
-              <InputOTPSlot index={index} className='size-14 text-xl' />
+              {/* <InputOTPSlot index={index} className='size-14 text-xl' /> */}
+
+              <InputOTPSlot
+                index={index}
+                className='size-14 text-xl text-black'
+              />
             </InputOTPGroup>
             {index !== 3 && <InputOTPSeparator />}
           </React.Fragment>

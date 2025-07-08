@@ -67,7 +67,7 @@ const InterceptedOtpVerify = ({ searchParams }: PropsType) => {
   const [isOpen, setIsOpen] = React.useState(true)
 
   // const callbackUrl = data?.callbackUrl || "https://example.com/dashboard";
-  const callbackUrl = 'https://example.com/dashboard'
+  const callbackUrl = 'https://komas-blacksales.vercel.app/reg-success'
 
   const handleClose = () => {
     setIsOpen(false)

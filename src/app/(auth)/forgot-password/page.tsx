@@ -25,7 +25,7 @@ const ForgotPassword = ({ searchParams }: PropsType) => {
   const { data } = schema.safeParse(searchParams)
 
   // const callbackUrl = data?.callbackUrl || "https://example.com/dashboard";
-  const callbackUrl = 'https://example.com/dashboard'
+  const callbackUrl = 'https://komas-blacksales.vercel.app/reg-success'
 
   return (
     <div className='flex items-center justify-center flex-1 p-4 bg-white'>
