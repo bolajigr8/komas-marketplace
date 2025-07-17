@@ -1,4 +1,4 @@
-import OrderDetails from '@/components/AccountPages/ViewDetails'
+import ViewDetails from '@/components/AccountPages/ViewDetails'
 import { Metadata } from 'next'
 import Link from 'next/link'
 import React from 'react'
@@ -51,7 +51,7 @@ const OrderDetailsPage = async ({ searchParams }: PropsType) => {
         </div>
 
         {/* <h2 className='text-xl font-semibold'>Track Your Order</h2> */}
-        <OrderDetails orderId={data?.orderId} />
+        <ViewDetails orderId={data?.orderId} />
       </div>
     </main>
   )

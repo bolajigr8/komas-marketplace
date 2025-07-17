@@ -15,7 +15,14 @@ const OrderHistory = async () => {
   const res: OrdersResponse = await getAllOrders()
   const allOrders: OrderData[] = Array.isArray(res.data) ? res.data : []
 
-  // console.log('allOrders', allOrders)
+  // Sort orders by createdAt date in descending order (most recent first)
+  const sortedOrders = allOrders.sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime()
+    const dateB = new Date(b.createdAt).getTime()
+    return dateB - dateA // Descending order (newest first)
+  })
+
+  console.log('allOrders', sortedOrders)
 
   return (
     <main className='flex-1 bg-white py-8 px-4 md:px-6'>
@@ -37,8 +44,8 @@ const OrderHistory = async () => {
           </p>
         </div>
         <div className='flex flex-col gap-3 pb-2 lg:p-6 rounded-xl lg:border'>
-          {allOrders &&
-            allOrders.map((order, index) => {
+          {sortedOrders &&
+            sortedOrders.map((order, index) => {
               // Convert createdAt to a readable date
               const createdAtDate = new Date(
                 order.createdAt
@@ -47,32 +54,69 @@ const OrderHistory = async () => {
                 month: 'long',
                 day: 'numeric',
               })
+
+              // Calculate total quantity from all products in the order
+              const totalQuantity =
+                order.products?.reduce(
+                  (sum, product) => sum + (product.quantity || 0),
+                  0
+                ) || 0
+
+              // Get all product names
+              const productNames =
+                order.products
+                  ?.map((product) => (product.productID as any)?.name || '')
+                  .filter((name) => name)
+                  .join(', ') || ''
+
+              // Get all product descriptions (or use the first one)
+              const productDescriptions = order.products
+                ?.map(
+                  (product) => (product.productID as any)?.description || ''
+                )
+                .filter((desc) => desc)
+
+              const combinedDescription =
+                productDescriptions?.length > 1
+                  ? `${productDescriptions.length} different products`
+                  : productDescriptions?.[0] || ''
+
+              // Get all images from all products
+              const allImages =
+                order.products?.flatMap((product) => {
+                  if (
+                    product.productID &&
+                    typeof product.productID === 'object' &&
+                    'images' in product.productID &&
+                    Array.isArray(
+                      (product.productID as { images?: unknown }).images
+                    )
+                  ) {
+                    return (
+                      (product.productID as { images: string[] }).images || []
+                    )
+                  }
+                  return []
+                }) || []
+
+              // Use discountedPrice if it exists and is not zero, otherwise use totalAmount
+              const finalPrice =
+                order.discountedPrice && order.discountedPrice !== 0
+                  ? order.discountedPrice
+                  : order.totalAmount || 0
+
               return (
                 <OrderCard
                   key={index}
                   status={order.status}
-                  price={order.products?.[0]?.price || 0}
-                  name={(order.products?.[0]?.productID as any)?.name || ''}
-                  description={
-                    (order.products?.[0]?.productID as any)?.description || ''
-                  }
-                  quantity={
-                    (order.products?.[0]?.productID as any)?.quantity || 1
-                  }
+                  price={finalPrice}
+                  name={productNames}
+                  description={combinedDescription}
+                  quantity={totalQuantity}
                   createdAt={createdAtDate}
                   id={order._id}
-                  images={
-                    order.products?.[0]?.productID &&
-                    typeof order.products[0].productID === 'object' &&
-                    'images' in order.products[0].productID &&
-                    Array.isArray(
-                      (order.products[0].productID as { images?: unknown })
-                        .images
-                    )
-                      ? (order.products[0].productID as { images: string[] })
-                          .images
-                      : []
-                  }
+                  images={allImages}
+                  products={order.products} // Pass all products for detailed display
                 />
               )
             })}

@@ -68,7 +68,17 @@ export interface BaseData {
   updatedAt: string
   __v: number
 }
+// Variant interface
+export interface ProductVariant {
+  _id: string
+  color: string
+  size: string
+  quantity: number
+  price: string
+  images: string[]
+}
 
+// Updated Product interface with variants
 export interface Product extends BaseData {
   price: number
   priceWithMarkup: number
@@ -91,6 +101,7 @@ export interface Product extends BaseData {
   discount?: number
   salesCount?: number
   isApproved?: string
+  variants?: ProductVariant[] // Added variants as optional
 }
 
 export interface Category extends Omit<BaseData, 'image'> {
@@ -119,6 +130,7 @@ export interface Vendor extends BaseData {
 
 export interface CartItem {
   userId?: string
+  _id?: string
   product: Product
   quantity: number
   length?: string
@@ -247,6 +259,7 @@ export type OrderProduct = {
     brand: Brand
     vendor: string
   }
+  status: string
   vendorID: Vendor
   quantity: number
   price: number
@@ -281,6 +294,7 @@ export type OrderData = {
   paymentMethod: string
   deliveryFee: number
   taxFee: number
+  discountedPrice?: number
   totalAmount: number
   orderNotes?: string // Optional if no notes were added
   deliveryAddressType: string
@@ -403,3 +417,25 @@ export interface ApiResponse<T> {
   hasError: boolean
   data: T
 }
+
+// promo code
+export interface ApiPromoCode {
+  _id: string
+  code: string
+  discountType: string
+  discountValue: number
+
+  orderAmount?: number
+  maxDiscountAmount?: number
+  usageLimit?: number
+  usedCount?: number
+  isActive: boolean
+  expiresAt?: string
+  createdBy: string
+  updatedBy?: string | null
+  createdAt: string
+  updatedAt: string
+  __v: number
+}
+
+export type PromoCodeResponse = FetchResult<ApiPromoCode | null>

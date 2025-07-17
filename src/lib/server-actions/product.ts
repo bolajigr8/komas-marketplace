@@ -1,7 +1,12 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { customFetch, fetchCartWithAuth, fetchWithAuth } from '.'
+import {
+  customFetch,
+  fetchCartWithAuth,
+  fetchWithAuth,
+  fetchWithAuthGeneral,
+} from '.'
 import { CartItem, FetchResult, Product, ProductsResponse } from '../types'
 
 export const getProducts = async (params?: {
@@ -442,5 +447,88 @@ export const removeProductFromCart = async ({
       message: error.message || 'Failed to remove product from cart',
       data: null,
     }
+  }
+}
+
+// // Clear Cart
+// export const clearCart = async (): Promise<{
+//   statusCode: number
+//   hasError: boolean
+//   message: string
+//   data: any
+// }> => {
+//   try {
+//     const res = await fetchWithAuth('/cart/clear', {
+//       method: 'GET',
+//     })
+
+//     return await res.json()
+//   } catch (error: any) {
+//     return {
+//       statusCode: error.code || 500,
+//       hasError: true,
+//       message: 'Failed to clear cart',
+//       data: null,
+//     }
+//   }
+// }
+
+export const clearCart = async (
+  retryCount = 3
+): Promise<{
+  statusCode: number
+  hasError: boolean
+  message: string
+  data: any
+}> => {
+  let lastError: any = null
+
+  for (let attempt = 1; attempt <= retryCount; attempt++) {
+    try {
+      console.log(
+        `Attempting to clear server cart (attempt ${attempt}/${retryCount})`
+      )
+
+      const res = await fetchWithAuthGeneral('/cart/clear', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+      }
+
+      const result = await res.json()
+
+      if (result.hasError) {
+        throw new Error(result.message || 'Server returned error')
+      }
+
+      console.log('Server cart cleared successfully:', result)
+      return result
+    } catch (error: any) {
+      lastError = error
+      console.error(`Cart clear attempt ${attempt} failed:`, error)
+
+      // If it's the last attempt, don't retry
+      if (attempt === retryCount) {
+        break
+      }
+
+      // Wait before retrying (exponential backoff)
+      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+    }
+  }
+
+  console.error('All cart clear attempts failed:', lastError)
+  return {
+    statusCode: lastError?.code || 500,
+    hasError: true,
+    message: `Failed to clear cart after ${retryCount} attempts: ${
+      lastError?.message || 'Unknown error'
+    }`,
+    data: null,
   }
 }

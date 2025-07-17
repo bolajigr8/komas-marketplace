@@ -1,7 +1,7 @@
 import React from 'react'
 import { OrderData, OrdersResponse } from '@/lib/types'
 import { getAllOrders } from '@/lib/server-actions/order'
-import ClientImageRender from '../General/ClientImageRender'
+import ProductsDropdown from './ProductsDropdown'
 
 type PropsType = {
   orderId?: string
@@ -11,10 +11,11 @@ const ViewDetails: React.FC<PropsType> = async ({ orderId }) => {
   const res: OrdersResponse = await getAllOrders()
   const allOrders: OrderData[] = Array.isArray(res.data) ? res.data : []
   const order = allOrders.find((o) => o._id === orderId)
-  if (!order)
-    return <div className='text-center text-gray-600'>Order not found</div>
 
-  const product = order.products[0].productID as any // TODO: Replace 'any' with the correct Product type if available
+  if (!order) {
+    return <div className='text-center text-gray-600'>Order not found</div>
+  }
+
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -24,37 +25,12 @@ const ViewDetails: React.FC<PropsType> = async ({ orderId }) => {
 
   return (
     <main className='flex-1 bg-white py-8 px-4 md:px-6 space-y-12'>
-      {/* Product Details */}
+      {/* Products Details */}
       <section className='p-6 bg-white text-green-800 border border-green-500 rounded-xl shadow-md'>
-        <div className='flex flex-col md:flex-row gap-6'>
-          <div className='w-full md:w-1/3'>
-            <ClientImageRender
-              folderName='products'
-              src={product.images?.[0] || '/Images/card.jpg'}
-              alt={product.name}
-              width={250}
-              height={250}
-              className='object-contain rounded-lg shadow-sm border border-gray-300'
-            />
-          </div>
-          <div className='w-full md:w-2/3 space-y-2'>
-            <h3 className='text-xl font-bold'>{product.name}</h3>
-            <p>{product.description}</p>
-            <p>
-              <strong>Price:</strong> ₦{product.price}
-            </p>
-            {product.category && (
-              <p>
-                <strong>Category:</strong> {product.category.name}
-              </p>
-            )}
-            {product.brand && (
-              <p>
-                <strong>Brand:</strong> {product.brand.name}
-              </p>
-            )}
-          </div>
-        </div>
+        <h2 className='text-2xl font-semibold mb-4'>
+          {order.products.length > 1 ? 'Products' : 'Product'} Details
+        </h2>
+        <ProductsDropdown products={order.products} />
       </section>
 
       {/* Order Summary */}
@@ -75,7 +51,8 @@ const ViewDetails: React.FC<PropsType> = async ({ orderId }) => {
               <strong>Payment Method:</strong> {order.paymentMethod}
             </p>
             <p>
-              <strong>Total Amount:</strong> ₦{order.totalAmount}
+              <strong>Total Items:</strong>{' '}
+              {order.products.reduce((sum, item) => sum + item.quantity, 0)}
             </p>
           </div>
           <div className='space-y-2'>
@@ -84,6 +61,9 @@ const ViewDetails: React.FC<PropsType> = async ({ orderId }) => {
             </p>
             <p>
               <strong>Tax Fee:</strong> ₦{order.taxFee}
+            </p>
+            <p>
+              <strong>Total Amount:</strong> ₦{order.totalAmount}
             </p>
             <p>
               <strong>Delivery Address:</strong>{' '}

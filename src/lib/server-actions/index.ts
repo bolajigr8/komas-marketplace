@@ -384,3 +384,68 @@ export const fetchCartWithAuth = async (
     throw error
   }
 }
+
+// general fetch auth without custom fetch
+export const fetchWithAuthGeneral = async (
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> => {
+  try {
+    const session = await auth()
+
+    // Debug logging
+    console.log('Session check:', {
+      hasSession: !!session,
+      hasAccessToken: !!session?.accessToken,
+      tokenPreview: session?.accessToken
+        ? `${session.accessToken.substring(0, 10)}...`
+        : 'none',
+    })
+
+    // Check if session exists and has access token
+    if (!session) {
+      console.error('No session found')
+      throw new Error('Authentication required: No session found')
+    }
+
+    if (!session.accessToken) {
+      console.error('No access token in session')
+      throw new Error('Authentication required: No access token')
+    }
+
+    const url = typeof input === 'string' ? input : input.toString()
+    const fullUrl = `${process.env.NEXT_PUBLIC_API_URL}${url}`
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...init?.headers,
+      Authorization: `Bearer ${session.accessToken}`,
+    }
+
+    // Log the request details (without sensitive data)
+    console.log('Making authenticated request:', {
+      url: fullUrl,
+      method: init?.method || 'GET',
+      hasAuth: headers.Authorization?.startsWith('Bearer '),
+    })
+
+    const response = await fetch(fullUrl, {
+      cache: 'no-store', // Disable caching to get fresh data
+      ...init,
+      headers,
+    })
+
+    // Log response status
+    console.log('Request completed:', {
+      status: response.status,
+      statusText: response.statusText,
+      url: fullUrl,
+    })
+
+    return response
+  } catch (error) {
+    console.error('fetchWithAuth error:', error)
+    throw error
+  }
+}

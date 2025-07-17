@@ -1298,12 +1298,12 @@ const CartCounter = ({
     }
     if (newQty > oldQty) {
       return {
-        title: '➕ Quantity increased',
+        title: 'Quantity increased',
         description: `Updated to ${newQty} items`,
       }
     }
     return {
-      title: '➖ Quantity decreased',
+      title: 'Quantity decreased',
       description: `Updated to ${newQty} items`,
     }
   }

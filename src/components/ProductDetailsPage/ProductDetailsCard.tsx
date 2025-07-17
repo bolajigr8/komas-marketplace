@@ -1,6 +1,6 @@
 'use client'
 import { calculateDiscountPrice, formatNumber } from '@/lib/utils'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { BsStarFill } from 'react-icons/bs'
 import AddToCartBtn from '../General/AddToCartBtn'
 import Accordion from './Accordion'
@@ -20,8 +20,17 @@ type PropsType = {
   product: Product
 }
 
+interface SelectedVariant {
+  color?: string
+  size?: string
+  price?: number
+  quantity?: number
+  variantId?: string
+}
+
 const ProductDetailsCard = ({ product }: PropsType) => {
   const [quantity, setQuantity] = useState<number>(1)
+  const [selectedVariant, setSelectedVariant] = useState<SelectedVariant>({})
   const [isSync, setIsSync] = useState(true)
   const dispatch = useAppDispatch()
   const { toast } = useToast()
@@ -34,9 +43,187 @@ const ProductDetailsCard = ({ product }: PropsType) => {
     (item) => item.product?._id === product._id
   )
 
+  // Extract unique colors and sizes from variants
+  const availableOptions = useMemo(() => {
+    if (!product.variants || product.variants.length === 0) {
+      return { colors: [], sizes: [] }
+    }
+
+    const colors = Array.from(
+      new Set(product.variants.map((v) => v.color).filter(Boolean))
+    )
+    const sizes = Array.from(
+      new Set(product.variants.map((v) => v.size).filter(Boolean))
+    )
+
+    return { colors, sizes }
+  }, [product.variants])
+
+  // Get variants that match current selection
+  const matchingVariants = useMemo(() => {
+    if (!product.variants || product.variants.length === 0) return []
+
+    return product.variants.filter((variant) => {
+      const colorMatch =
+        !selectedVariant.color || variant.color === selectedVariant.color
+      const sizeMatch =
+        !selectedVariant.size || variant.size === selectedVariant.size
+      return colorMatch && sizeMatch
+    })
+  }, [product.variants, selectedVariant])
+
+  // Get available colors - show all colors that have stock, regardless of size selection
+  const availableColors = useMemo(() => {
+    if (!product.variants || product.variants.length === 0) return []
+
+    return availableOptions.colors.filter((color) => {
+      // Check if this color has ANY variant with stock > 0
+      return product.variants?.some(
+        (variant) => variant.color === color && variant.quantity > 0
+      )
+    })
+  }, [product.variants, availableOptions.colors])
+
+  // Get available sizes - show all sizes that have stock, regardless of color selection
+  const availableSizes = useMemo(() => {
+    if (!product.variants || product.variants.length === 0) return []
+
+    return availableOptions.sizes.filter((size) => {
+      // Check if this size has ANY variant with stock > 0
+      return product.variants?.some(
+        (variant) => variant.size === size && variant.quantity > 0
+      )
+    })
+  }, [product.variants, availableOptions.sizes])
+
+  // Get sizes available for selected color
+  const sizesForSelectedColor = useMemo(() => {
+    if (!selectedVariant.color || !product.variants) return availableSizes
+
+    return availableSizes.filter((size) => {
+      return product.variants?.some(
+        (variant) =>
+          variant.color === selectedVariant.color &&
+          variant.size === size &&
+          variant.quantity > 0
+      )
+    })
+  }, [selectedVariant.color, product.variants, availableSizes])
+
+  // Get colors available for selected size
+  const colorsForSelectedSize = useMemo(() => {
+    if (!selectedVariant.size || !product.variants) return availableColors
+
+    return availableColors.filter((color) => {
+      return product.variants?.some(
+        (variant) =>
+          variant.size === selectedVariant.size &&
+          variant.color === color &&
+          variant.quantity > 0
+      )
+    })
+  }, [selectedVariant.size, product.variants, availableColors])
+
+  // Check if a color is available (either selected or has valid combinations)
+  const isColorAvailable = (color: string) => {
+    if (color === selectedVariant.color) return true // Always allow deselection
+    if (!selectedVariant.size) return availableColors.includes(color)
+    return colorsForSelectedSize.includes(color)
+  }
+
+  // Check if a size is available (either selected or has valid combinations)
+  const isSizeAvailable = (size: string) => {
+    if (size === selectedVariant.size) return true // Always allow deselection
+    if (!selectedVariant.color) return availableSizes.includes(size)
+    return sizesForSelectedColor.includes(size)
+  }
+
+  // Get current variant based on selection
+  const currentVariant = useMemo(() => {
+    if (!product.variants || product.variants.length === 0) return null
+
+    return product.variants.find(
+      (variant) =>
+        variant.color === selectedVariant.color &&
+        variant.size === selectedVariant.size
+    )
+  }, [product.variants, selectedVariant])
+
+  // Calculate current price and stock - DEFAULT TO PRODUCT VALUES
+  const currentPrice = useMemo(() => {
+    // If a specific variant is selected, use its price
+    if (currentVariant && currentVariant.price) {
+      return parseFloat(currentVariant.price.toString())
+    }
+    // Otherwise, use the product's base price
+    return product.price || 0
+  }, [currentVariant, product.price])
+
+  const currentStock = useMemo(() => {
+    // If a specific variant is selected, use its stock
+    if (currentVariant && currentVariant.quantity !== undefined) {
+      return currentVariant.quantity
+    }
+    // Otherwise, use the product's base stock
+    return product.quantity || 0
+  }, [currentVariant, product.quantity])
+
+  // Check if user has made any variant selections
+  const hasVariantSelection = selectedVariant.color || selectedVariant.size
+
+  // Check if we can add to cart (either no variants, or size is selected when sizes exist)
+  const canAddToCart = useMemo(() => {
+    const hasVariants = product.variants && product.variants.length > 0
+    const hasSizes = availableOptions.sizes.length > 0
+
+    // If no variants exist, can always add to cart
+    if (!hasVariants) return true
+
+    // If variants exist but no sizes, can add to cart
+    if (!hasSizes) return true
+
+    // If sizes exist, must select a size to add to cart
+    return Boolean(selectedVariant.size)
+  }, [product.variants, availableOptions.sizes, selectedVariant.size])
+
+  // Get current cart quantity for this product
+  const currentCartQuantity = cartItem ? cartItem.quantity : 0
+
   useEffect(() => {
     dispatch(cartActions.initializeCart())
   }, [dispatch, session?.user])
+
+  const handleColorSelect = (color: string) => {
+    // Toggle selection: if clicking the same color, deselect it
+    if (selectedVariant.color === color) {
+      setSelectedVariant((prev) => ({
+        ...prev,
+        color: undefined,
+      }))
+    } else {
+      setSelectedVariant((prev) => ({
+        ...prev,
+        color: color,
+      }))
+    }
+    setQuantity(1) // Reset quantity when variant changes
+  }
+
+  const handleSizeSelect = (size: string) => {
+    // Toggle selection: if clicking the same size, deselect it
+    if (selectedVariant.size === size) {
+      setSelectedVariant((prev) => ({
+        ...prev,
+        size: undefined,
+      }))
+    } else {
+      setSelectedVariant((prev) => ({
+        ...prev,
+        size: size,
+      }))
+    }
+    setQuantity(1) // Reset quantity when variant changes
+  }
 
   const handleChangeQuantity = (newQuantity: number) => {
     setQuantity(newQuantity)
@@ -47,22 +234,39 @@ const ProductDetailsCard = ({ product }: PropsType) => {
 
     try {
       setIsSync(false)
+
+      // Create product data with selected variant info
+      const productWithVariant = {
+        ...product,
+        selectedVariant: currentVariant
+          ? {
+              color: selectedVariant.color,
+              size: selectedVariant.size,
+              price: currentPrice,
+              variantId: currentVariant._id,
+            }
+          : null,
+        price: currentPrice, // Use current price based on variant or default
+      }
+
+      // Add only 1 item to cart (like the plus button)
       dispatch(
         cartActions.addToCart({
-          product: product,
-          quantity: quantity,
+          product: productWithVariant,
+          quantity: 1,
         })
       )
 
       toast({
-        description: 'Added to cart',
+        description: 'Added 1 item to cart',
         duration: 2000,
       })
 
       if (session?.user) {
         const res = await addProductToCart({
           productId: product._id,
-          quantity: quantity,
+          quantity: 1,
+          // variantId: currentVariant?._id,
         })
         if (res.hasError) throw new Error(res.message)
       }
@@ -83,85 +287,242 @@ const ProductDetailsCard = ({ product }: PropsType) => {
     }
   }
 
+  const hasVariants = product.variants && product.variants.length > 0
+
   return (
     <div className='space-y-8'>
       <div className='bg-white rounded-2xl p-8 shadow-sm'>
         <div className='space-y-4 pb-6 border-b'>
-          <h1 className='text-2xl font-bold text-gray-900'>{product.name}</h1>
-          <div className='flex items-center justify-between'>
+          <h1 className='text-2xl md:text-3xl font-bold text-gray-900'>
+            {product.name}
+          </h1>
+          <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
             <div className='flex items-center gap-4'>
-              <span className='text-2xl font-bold text-[#3bb77e]'>
-                ₦{product.price.toLocaleString()}
+              <span className='text-2xl md:text-3xl font-bold text-[#3bb77e]'>
+                ₦{currentPrice.toLocaleString()}
               </span>
-              {/* {product.oldPrice && ( */}
-              <span className='text-lg text-gray-400 line-through'>
-                ₦200,000
-                {/* {product.oldPrice.toLocaleString()} */}
-              </span>
-              {/* )} */}
+              {currentVariant && currentPrice !== product.price && (
+                <span className='text-lg text-gray-400 line-through'>
+                  ₦{product.price?.toLocaleString()}
+                </span>
+              )}
             </div>
             <div className='flex items-center gap-2'>
-              <StarIcon className='w-5 h-5 text-yellow-400' />
+              <StarIcon className='w-5 h-5 text-yellow-400 fill-current' />
               <span className='font-medium'>4.8</span>
-              <span className='text-gray-500'>
-                {/* ({product.reviews?.length || 0} reviews) */}2 reviews
-              </span>
+              <span className='text-gray-500 text-sm'>(2 reviews)</span>
             </div>
           </div>
         </div>
 
+        {/* Stock Status */}
         <div className='py-4 border-b'>
           <div className='flex items-center gap-2'>
             <span
               className={`w-3 h-3 rounded-full ${
-                product.quantity > 0 ? 'bg-[#3bb77e]' : 'bg-red-500'
+                currentStock > 0 ? 'bg-[#3bb77e]' : 'bg-red-500'
               }`}
             ></span>
             <span className='text-sm font-medium text-gray-700'>
-              {product.quantity > 0 ? 'In Stock' : 'Out of Stock'}
-              {product.quantity > 0 && ` (${product.quantity} units)`}
+              {currentStock > 0 ? 'In Stock' : 'Out of Stock'}
+              {currentStock > 0 && ` (${currentStock} units)`}
             </span>
           </div>
         </div>
 
+        {/* Product Description */}
         <div className='py-6 border-b'>
           <p className='text-gray-600 leading-relaxed'>{product.description}</p>
         </div>
 
+        {/* Variants Selection */}
+        {hasVariants && (
+          <div className='py-6 border-b space-y-6'>
+            {/* Color Selection */}
+            {availableOptions.colors.length > 0 && (
+              <div className='space-y-3'>
+                <h3 className='text-sm font-semibold text-gray-900 uppercase tracking-wide'>
+                  Color (Optional)
+                  {selectedVariant.color &&
+                    ` - Selected: ${selectedVariant.color}`}
+                </h3>
+                <div className='flex flex-wrap gap-2'>
+                  {availableColors.map((color) => {
+                    const isSelected = selectedVariant.color === color
+                    const isAvailable = isColorAvailable(color)
+
+                    return (
+                      <button
+                        key={color}
+                        onClick={() => handleColorSelect(color)}
+                        disabled={!isAvailable}
+                        className={`
+                          px-4 py-2 rounded-lg border-2 font-medium transition-all
+                          ${
+                            isSelected
+                              ? 'border-[#3bb77e] bg-[#3bb77e] text-white'
+                              : isAvailable
+                              ? 'border-gray-200 text-gray-700 hover:border-[#3bb77e] hover:text-[#3bb77e]'
+                              : 'border-gray-100 text-gray-400 cursor-not-allowed'
+                          }
+                        `}
+                      >
+                        {color}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Size Selection */}
+            {availableOptions.sizes.length > 0 && (
+              <div className='space-y-3'>
+                <h3 className='text-sm font-semibold text-gray-900 uppercase tracking-wide'>
+                  Size {availableOptions.sizes.length > 0 ? '(Required)' : ''}
+                  {selectedVariant.size &&
+                    ` - Selected: ${selectedVariant.size}`}
+                </h3>
+                <div className='flex flex-wrap gap-2'>
+                  {availableSizes.map((size) => {
+                    const isSelected = selectedVariant.size === size
+                    const isAvailable = isSizeAvailable(size)
+
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => handleSizeSelect(size)}
+                        disabled={!isAvailable}
+                        className={`
+                          px-4 py-2 rounded-lg border-2 font-medium transition-all min-w-[3rem]
+                          ${
+                            isSelected
+                              ? 'border-[#3bb77e] bg-[#3bb77e] text-white'
+                              : isAvailable
+                              ? 'border-gray-200 text-gray-700 hover:border-[#3bb77e] hover:text-[#3bb77e]'
+                              : 'border-gray-100 text-gray-400 cursor-not-allowed'
+                          }
+                        `}
+                      >
+                        {size}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Selected Variant Info */}
+            {hasVariantSelection && (
+              <div className='bg-gray-50 rounded-lg p-4'>
+                <div className='flex flex-wrap gap-4 text-sm'>
+                  {selectedVariant.color && (
+                    <div className='flex items-center gap-2'>
+                      <span className='text-gray-600'>Color:</span>
+                      <span className='font-medium'>
+                        {selectedVariant.color}
+                      </span>
+                    </div>
+                  )}
+                  {selectedVariant.size && (
+                    <div className='flex items-center gap-2'>
+                      <span className='text-gray-600'>Size:</span>
+                      <span className='font-medium'>
+                        {selectedVariant.size}
+                      </span>
+                    </div>
+                  )}
+                  <div className='flex items-center gap-2'>
+                    <span className='text-gray-600'>Price:</span>
+                    <span className='font-medium text-[#3bb77e]'>
+                      ₦{currentPrice.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <span className='text-gray-600'>Available:</span>
+                    <span className='font-medium'>{currentStock} units</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Show message when size is required but not selected */}
+            {availableOptions.sizes.length > 0 && !selectedVariant.size && (
+              <div className='bg-amber-50 rounded-lg p-4'>
+                <p className='text-sm text-amber-700'>
+                  Please select a size to add this item to your cart. Color
+                  selection is optional.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Add to Cart Section */}
         <div className='pt-6 space-y-4'>
-          {product.quantity > 0 ? (
+          {currentStock > 0 ? (
             <>
-              <div className='flex items-center gap-4'>
-                {/* Show quantity selector only if item is not in cart */}
-                {!cartItem && (
-                  <QuantitySelector
+              <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-4'>
+                {/* Show quantity selector and cart counter together */}
+                <div className='flex items-center gap-4'>
+                  {/* <QuantitySelector
                     value={quantity}
                     onChange={handleChangeQuantity}
-                    max={product.quantity}
+                    max={currentStock}
                     min={1}
-                  />
-                )}
+                  /> */}
+                  {cartItem && (
+                    <div className='flex items-center gap-2 text-sm text-gray-600'>
+                      <span>In cart: {currentCartQuantity}</span>
+                    </div>
+                  )}
+                </div>
 
-                {/* Conditional rendering based on cart status */}
-                {cartItem ? (
-                  <div className='flex-1'>
+                {/* Add to Cart button - always visible */}
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={
+                    !isSync ||
+                    !canAddToCart ||
+                    currentCartQuantity >= currentStock
+                  }
+                  className='flex-1 bg-[#3bb77e] hover:bg-[#2da56d] text-white px-8 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50'
+                >
+                  <RiShoppingCart2Line className='w-5 h-5' />
+                  {cartItem ? 'Add More' : 'Add to Cart'}
+                </Button>
+              </div>
+
+              {/* Show cart counter for quantity adjustment */}
+              {cartItem && (
+                <div className='bg-gray-50 rounded-lg p-4'>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-sm text-gray-600'>
+                      Adjust quantity in cart:
+                    </span>
                     <CartCounter
                       productId={product._id}
                       initialQuantity={cartItem.quantity}
-                      maxQuantity={product.quantity}
+                      maxQuantity={currentStock}
                     />
                   </div>
-                ) : (
-                  <Button
-                    onClick={handleAddToCart}
-                    disabled={!isSync}
-                    className='flex-1 bg-[#3bb77e] hover:bg-[#2da56d] text-white px-8 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2'
-                  >
-                    <RiShoppingCart2Line className='w-5 h-5' />
-                    Add to cart
-                  </Button>
-                )}
-              </div>
+                </div>
+              )}
+
+              {!canAddToCart && (
+                <p className='text-sm text-amber-600 bg-amber-50 p-3 rounded-lg'>
+                  {availableOptions.sizes.length > 0 && !selectedVariant.size
+                    ? 'Please select a size before adding to cart'
+                    : 'Please complete your selection'}
+                </p>
+              )}
+
+              {currentCartQuantity >= currentStock && (
+                <p className='text-sm text-red-600 bg-red-50 p-3 rounded-lg'>
+                  Maximum available quantity already in cart
+                </p>
+              )}
+
               <button className='w-full border-2 border-[#3bb77e] text-[#3bb77e] px-8 py-3 rounded-lg font-medium hover:bg-[#3bb77e] hover:text-white transition-colors'>
                 Buy Now
               </button>
@@ -177,29 +538,30 @@ const ProductDetailsCard = ({ product }: PropsType) => {
         </div>
       </div>
 
+      {/* Features Section */}
       <div className='bg-white rounded-2xl p-8 shadow-sm'>
         <ul className='space-y-4'>
           <li className='flex items-center gap-3'>
-            <BiCheckCircle className='text-[#3bb77e] text-xl' />
+            <BiCheckCircle className='text-[#3bb77e] text-xl flex-shrink-0' />
             <p className='text-sm text-gray-700'>
               Free delivery on orders over{' '}
               <span className='font-medium text-[#3bb77e]'>₦10,000</span>
             </p>
           </li>
           <li className='flex items-center gap-3'>
-            <BiCheckCircle className='text-[#3bb77e] text-xl' />
+            <BiCheckCircle className='text-[#3bb77e] text-xl flex-shrink-0' />
             <p className='text-sm text-gray-700'>
               Delivery within Lagos: 24 hours
             </p>
           </li>
           <li className='flex items-center gap-3'>
-            <BiCheckCircle className='text-[#3bb77e] text-xl' />
+            <BiCheckCircle className='text-[#3bb77e] text-xl flex-shrink-0' />
             <p className='text-sm text-gray-700'>
               Support available 7 days a week
             </p>
           </li>
           <li className='flex items-center gap-3'>
-            <BiCheckCircle className='text-[#3bb77e] text-xl' />
+            <BiCheckCircle className='text-[#3bb77e] text-xl flex-shrink-0' />
             <p className='text-sm text-gray-700'>
               Secure payment with multiple options
             </p>
@@ -207,12 +569,27 @@ const ProductDetailsCard = ({ product }: PropsType) => {
         </ul>
       </div>
 
+      {/* Accordion Section */}
       <div className='bg-white rounded-2xl p-8 shadow-sm'>
         <Accordion
           data={[
             {
               title: 'Product Details',
               description: product.description,
+            },
+            {
+              title: 'Specifications',
+              description: `
+                ${product.length ? `Length: ${product.length}cm` : ''}
+                ${product.breadth ? `Breadth: ${product.breadth}cm` : ''}
+                ${product.width ? `Width: ${product.width}cm` : ''}
+                ${
+                  product.brand && typeof product.brand === 'object'
+                    ? `Brand: ${product.brand.name}`
+                    : ''
+                }
+                ${product.sku ? `SKU: ${product.sku}` : ''}
+              `.trim(),
             },
             {
               title: 'Return & Refund Policy',
@@ -243,19 +620,19 @@ const QuantitySelector = ({
   min: number
 }) => {
   return (
-    <div className='flex items-center border rounded-lg'>
+    <div className='flex items-center border rounded-lg bg-white'>
       <button
         onClick={() => onChange(Math.max(min, value - 1))}
         disabled={value <= min}
-        className='px-3 py-2 text-gray-600 hover:text-[#3bb77e] disabled:text-gray-300'
+        className='px-3 py-2 text-gray-600 hover:text-[#3bb77e] disabled:text-gray-300 transition-colors'
       >
         <MinusIcon className='w-4 h-4' />
       </button>
-      <span className='w-12 text-center font-medium'>{value}</span>
+      <span className='w-12 text-center font-medium py-2'>{value}</span>
       <button
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={value >= max}
-        className='px-3 py-2 text-gray-600 hover:text-[#3bb77e] disabled:text-gray-300'
+        className='px-3 py-2 text-gray-600 hover:text-[#3bb77e] disabled:text-gray-300 transition-colors'
       >
         <PlusIcon className='w-4 h-4' />
       </button>

@@ -1,4 +1,5 @@
 import FinalCheckoutForm from '@/components/CheckoutPage/FinalCheckoutForm'
+import ErrorDisplay from '@/components/General/ErrorDisplay'
 import { getCartProducts } from '@/lib/server-actions/product'
 import { CartItem, FetchResult } from '@/lib/types'
 import { Metadata } from 'next'
@@ -23,7 +24,8 @@ const schema = z.object({
 // Safe formatNumber function to avoid toString error
 const safeFormatNumber = (num: number | undefined | null): string => {
   if (num === undefined || num === null) return '0'
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  const rounded = Math.ceil(num) // always round up
+  return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
 const Payment = async ({ searchParams }: Props) => {
@@ -36,7 +38,7 @@ const Payment = async ({ searchParams }: Props) => {
 
   try {
     const cart = await getCartProducts()
-    console.log('Cart data:', cart)
+    // console.log('Cart data:', cart)
 
     if (cart.hasError) {
       error = 'Failed to fetch cart products'
@@ -63,25 +65,13 @@ const Payment = async ({ searchParams }: Props) => {
   }
 
   // Fixed tax fee
-  const taxFee = 100
+  // const taxFee = 100
 
-  console.log('Cart Items:', cartItems)
+  // console.log('Cart Items:', cartItems)
 
   if (error) {
-    return (
-      <div className='p-6 bg-red-50 rounded-lg text-center'>
-        <h2 className='text-xl font-semibold text-red-600 mb-2'>Error</h2>
-        <p>{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className='mt-4 px-4 py-2 bg-red-600 text-white rounded-lg'
-        >
-          Try Again
-        </button>
-      </div>
-    )
+    return <ErrorDisplay error={error} />
   }
-
   return (
     <div className='max-w-6xl w-full mx-auto flex flex-col gap-6 mt-[4rem]  p-4 md:p-6'>
       <div className='bg-white rounded-2xl shadow-sm p-6'>
@@ -122,12 +112,11 @@ const Payment = async ({ searchParams }: Props) => {
               {safeFormatNumber(subtotal)}
             </p>
           </div>
-
           <div className='flex justify-between'>
-            <p>Tax:</p>
+            <p>Service Fee:</p>
             <p>
               <span className='line-through'>N</span>
-              {safeFormatNumber(taxFee)}
+              {safeFormatNumber(subtotal * 0.06)}
             </p>
           </div>
 
@@ -145,7 +134,7 @@ const Payment = async ({ searchParams }: Props) => {
 
       <FinalCheckoutForm
         subtotal={subtotal}
-        taxFee={taxFee}
+        taxFee={subtotal * 0.06}
         email={(data?.email as string) || ''}
         phone={(data?.phone as string) || ''}
       />

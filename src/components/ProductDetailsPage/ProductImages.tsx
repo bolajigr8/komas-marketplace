@@ -2,10 +2,9 @@
 
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import { PanInfo, motion, useMotionValue } from 'framer-motion'
-import { Skeleton } from '@nextui-org/react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
-import Image from 'next/image'
 import { RiImageLine } from 'react-icons/ri'
+import ServerImageRender from '../General/ServerImageRender'
 
 // Add a direct image fallback component for reuse
 const ImageFallback = ({ message = 'No image available' }) => (
@@ -17,52 +16,34 @@ const ImageFallback = ({ message = 'No image available' }) => (
   </div>
 )
 
-// Progressive loading skeleton
-const ImageSkeleton = () => (
-  <div className='w-full h-full bg-gray-100 animate-pulse flex items-center justify-center'>
-    <div className='w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center'>
-      <RiImageLine className='w-8 h-8 text-gray-300' />
-    </div>
-  </div>
-)
-
 type PropsType = {
   images: string | string[]
+  folderName: string // New prop for server image folder
   altText?: string
   autoplayInterval?: number
   className?: string
-  quality?: number
   priority?: boolean
 }
 
 const ProductImages = ({
   images,
+  folderName,
   altText = 'Product Image',
   autoplayInterval = 10000,
   className = '',
-  quality = 85,
   priority = false,
 }: PropsType) => {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [imageLoadingStates, setImageLoadingStates] = useState<boolean[]>([])
-  const [imageErrors, setImageErrors] = useState<boolean[]>([])
-  const [isLazyLoading, setIsLazyLoading] = useState(true)
   const dragX = useMotionValue(0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
 
-  // Process images to get array of URLs with optimization
+  // Process images to get array of image names
   const processedImages = useMemo(() => {
     if (!images) return []
 
     const imageArray = Array.isArray(images) ? images : [images]
-    const validImages = imageArray.filter((img) => !!img)
-
-    return validImages.map((image) => {
-      const baseUrl = `${process.env.NEXT_PUBLIC_AWS_URL}/products/${image}`
-      // Add format optimization parameters if using a CDN that supports it
-      return baseUrl
-    })
+    return imageArray.filter((img) => !!img)
   }, [images])
 
   // Use useMemo to calculate hasImages
@@ -70,50 +51,10 @@ const ProductImages = ({
     return processedImages.length > 0
   }, [processedImages])
 
-  // Initialize loading and error states when images change
+  // Reset current index when images change
   useEffect(() => {
-    const initialLoadingStates = Array(processedImages.length).fill(true)
-    const initialErrorStates = Array(processedImages.length).fill(false)
-
-    setImageLoadingStates(initialLoadingStates)
-    setImageErrors(initialErrorStates)
     setCurrentIndex(0)
-
-    // Disable lazy loading for first few images
-    setIsLazyLoading(processedImages.length > 3)
   }, [processedImages.length])
-
-  // Handle image load completion
-  const handleImageLoad = (index: number) => {
-    setImageLoadingStates((prev) => {
-      const newStates = [...prev]
-      newStates[index] = false
-      return newStates
-    })
-  }
-
-  // Handle image errors with retry logic
-  const handleImageError = (index: number) => {
-    console.error(`Image at index ${index} failed to load`)
-    setImageLoadingStates((prev) => {
-      const newStates = [...prev]
-      newStates[index] = false
-      return newStates
-    })
-    setImageErrors((prev) => {
-      const newErrors = [...prev]
-      newErrors[index] = true
-      return newErrors
-    })
-  }
-
-  // Optimized sizes attribute for responsive images
-  const getSizesAttribute = (isMain = true) => {
-    if (isMain) {
-      return '(max-width: 640px) 95vw, (max-width: 768px) 70vw, (max-width: 1024px) 50vw, (max-width: 1280px) 40vw, 35vw'
-    }
-    return '(max-width: 640px) 12vw, (max-width: 768px) 8vw, (max-width: 1024px) 6vw, 5vw'
-  }
 
   const goToNext = useCallback(() => {
     if (currentIndex < processedImages.length - 1)
@@ -198,27 +139,6 @@ const ProductImages = ({
     stiffness: 300,
   }
 
-  // Preload adjacent images for better UX
-  useEffect(() => {
-    if (processedImages.length > 1) {
-      const preloadImages = []
-
-      // Preload next image
-      const nextIndex = (currentIndex + 1) % processedImages.length
-      preloadImages.push(nextIndex)
-
-      // Preload previous image
-      const prevIndex =
-        currentIndex === 0 ? processedImages.length - 1 : currentIndex - 1
-      preloadImages.push(prevIndex)
-
-      preloadImages.forEach((index) => {
-        const img = new window.Image()
-        img.src = processedImages[index]
-      })
-    }
-  }, [currentIndex, processedImages])
-
   return (
     <div className={`space-y-4 ${className}`}>
       <div
@@ -240,7 +160,7 @@ const ProductImages = ({
               onDragEnd={onDragEnd}
               className='flex h-full cursor-grab active:cursor-grabbing'
             >
-              {processedImages.map((url, index) => (
+              {processedImages.map((imageName, index) => (
                 <div
                   key={index}
                   className='w-full h-full flex-shrink-0 relative overflow-hidden'
@@ -250,46 +170,17 @@ const ProductImages = ({
                     transition={springOptions}
                     className='w-full h-full relative'
                   >
-                    {/* Show skeleton while loading */}
-                    {imageLoadingStates[index] && !imageErrors[index] && (
-                      <div className='absolute inset-0 z-10'>
-                        <ImageSkeleton />
-                      </div>
-                    )}
-
-                    {!imageErrors[index] ? (
-                      <Image
-                        src={url}
-                        alt={`${altText} - ${index + 1}`}
-                        fill
-                        sizes={getSizesAttribute(true)}
-                        className='object-contain w-full h-full transition-opacity duration-300'
-                        style={{
-                          objectFit: 'contain',
-                          width: '100%',
-                          height: '100%',
-                          opacity: imageLoadingStates[index] ? 0 : 1,
-                        }}
-                        onLoad={() => handleImageLoad(index)}
-                        onError={() => handleImageError(index)}
-                        priority={
-                          priority && (index === 0 || index === currentIndex)
-                        }
-                        loading={
-                          // First 3 images load eagerly, rest lazy
-                          index < 3 || index === currentIndex || !isLazyLoading
-                            ? 'eager'
-                            : 'lazy'
-                        }
-                        quality={quality}
-                        // Enable WebP/AVIF format optimization if using Next.js 13+
-                        unoptimized={false}
-                        placeholder='blur'
-                        blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
-                      />
-                    ) : (
-                      <ImageFallback message='Image failed to load' />
-                    )}
+                    <ServerImageRender
+                      folderName={folderName}
+                      src={imageName}
+                      alt={`${altText} - ${index + 1}`}
+                      className='w-full h-full object-contain'
+                      width={600} // Adjust based on your needs
+                      height={600}
+                      priority={
+                        priority && (index === 0 || index === currentIndex)
+                      }
+                    />
                   </motion.div>
                 </div>
               ))}
@@ -343,7 +234,7 @@ const ProductImages = ({
       {/* Thumbnails - Only show when multiple images and on larger screens */}
       {processedImages.length > 1 && (
         <div className='hidden md:flex gap-2 lg:gap-4 overflow-x-auto pb-2 snap-x scrollbar-hide'>
-          {processedImages.map((url, index) => (
+          {processedImages.map((imageName, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
@@ -354,31 +245,15 @@ const ProductImages = ({
               }`}
               aria-label={`View image ${index + 1}`}
             >
-              {!imageErrors[index] ? (
-                <div className='relative w-full h-full'>
-                  <Image
-                    src={url}
-                    alt={`Thumbnail ${index + 1}`}
-                    fill
-                    sizes={getSizesAttribute(false)}
-                    className='object-cover transition-all duration-200'
-                    onError={() => handleImageError(index)}
-                    loading='lazy'
-                    quality={60} // Lower quality for thumbnails
-                    unoptimized={false}
-                  />
-                  {/* Loading overlay for thumbnails */}
-                  {imageLoadingStates[index] && (
-                    <div className='absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center'>
-                      <RiImageLine className='w-3 h-3 text-gray-300' />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className='flex items-center justify-center h-full w-full bg-gray-100'>
-                  <RiImageLine className='w-4 h-4 sm:w-6 sm:h-6 text-gray-400' />
-                </div>
-              )}
+              <ServerImageRender
+                folderName={folderName}
+                src={imageName}
+                alt={`Thumbnail ${index + 1}`}
+                className='w-full h-full object-cover'
+                width={80} // Smaller for thumbnails
+                height={80}
+                priority={false}
+              />
             </button>
           ))}
         </div>

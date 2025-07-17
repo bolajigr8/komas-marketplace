@@ -38,7 +38,7 @@ const OrderSuccessPage = () => {
 
         <div className='flex flex-col sm:flex-row gap-4 justify-center'>
           <Button
-            onClick={() => router.push('/orders')}
+            onClick={() => router.push('/account/orders')}
             className='bg-green-500 text-white px-6 py-2'
           >
             View My Orders

@@ -11,6 +11,7 @@ import {
 import { useAppDispatch } from '@/redux-store/hooks'
 import { deliveryActions } from '@/redux-store/store-slices/DeliverySlice'
 import { cartActions } from '@/redux-store/store-slices/CartSlice'
+import { clearCart } from '@/lib/server-actions/product'
 
 interface StoredOrderData {
   cartProducts: any[]
@@ -394,6 +395,526 @@ const VerifyPaymentContent = () => {
   }
 
   // Enhanced createOrder function with comprehensive debugging
+  // const createOrder = async (
+  //   verifiedRef: string,
+  //   orderData: StoredOrderData
+  // ) => {
+  //   console.log('Creating order with reference:', verifiedRef)
+
+  //   // Debug log all IDs
+  //   debugLogAllIds(orderData)
+
+  //   try {
+  //     // Validate orderData structure
+  //     if (!orderData || typeof orderData !== 'object') {
+  //       throw new Error('Invalid order data structure')
+  //     }
+
+  //     // Check if it's a shopmate order
+  //     const userRoleType = orderData?.session?.userRoleType || []
+  //     const isShopmate =
+  //       Array.isArray(userRoleType) && userRoleType.includes('shopmate')
+  //     console.log('Is shopmate order:', isShopmate)
+
+  //     // Determine delivery place
+  //     const deliveryCategory =
+  //       orderData?.deliveryDetails?.deliveryMethod?.category || ''
+  //     const deliveryPlace =
+  //       deliveryCategory === 'pickup' ? 'fulfillment_center' : 'home'
+  //     console.log('Delivery place:', deliveryPlace)
+
+  //     // Try to get pickup station ID with debugging
+  //     console.log('=== TRYING TO GET PICKUP STATION ID ===')
+  //     let pickupStation = null
+
+  //     // Try all possible paths and log each attempt
+  //     const pickupPaths = [
+  //       'deliveryDetails.deliveryMethod.pickupLocation._id',
+  //       'deliveryDetails.deliveryMethod.pickupLocation.id',
+  //       'methodDetails.pickupLocation._id',
+  //       'methodDetails.pickupLocation.id',
+  //       'deliveryDetails.pickupLocation._id',
+  //       'deliveryDetails.pickupLocation.id',
+  //     ]
+
+  //     for (const path of pickupPaths) {
+  //       const keys = path.split('.')
+  //       let current = orderData
+  //       let isValid = true
+
+  //       console.log(`Trying path: ${path}`)
+
+  //       for (let i = 0; i < keys.length; i++) {
+  //         const key = keys[i]
+  //         console.log(
+  //           `  Step ${i + 1}: current[${key}] =`,
+  //           (current as any)?.[key]
+  //         )
+
+  //         if (
+  //           current === null ||
+  //           current === undefined ||
+  //           typeof current !== 'object'
+  //         ) {
+  //           console.log(
+  //             `  Path failed at step ${i + 1}: current is not an object`
+  //           )
+  //           isValid = false
+  //           break
+  //         }
+
+  //         current = current[key]
+
+  //         if (current === null || current === undefined) {
+  //           console.log(
+  //             `  Path failed at step ${i + 1}: ${key} is null/undefined`
+  //           )
+  //           isValid = false
+  //           break
+  //         }
+  //       }
+
+  //       if (
+  //         isValid &&
+  //         current &&
+  //         typeof current === 'string' &&
+  //         (current as string).trim()
+  //       ) {
+  //         console.log(`  SUCCESS: Found pickup station ID: ${current}`)
+  //         pickupStation = (current as string).trim()
+  //         break
+  //       } else {
+  //         console.log(`  FAILED: Path ${path} did not yield a valid ID`)
+  //       }
+  //     }
+
+  //     // If still no pickup station, try methodDetails._id and deliveryMethod._id
+  //     if (!pickupStation) {
+  //       console.log('Trying methodDetails._id for pickup station...')
+  //       const methodId =
+  //         orderData?.methodDetails?._id || orderData?.methodDetails?.id
+  //       if (methodId) {
+  //         console.log('Using methodDetails._id as pickup station:', methodId)
+  //         pickupStation = methodId
+  //       } else {
+  //         console.log('No methodDetails._id found')
+  //       }
+  //     }
+
+  //     if (!pickupStation) {
+  //       console.log('Trying deliveryMethod._id for pickup station...')
+  //       const deliveryMethodId =
+  //         orderData?.deliveryDetails?.deliveryMethod?._id ||
+  //         orderData?.deliveryDetails?.deliveryMethod?.id
+  //       if (deliveryMethodId) {
+  //         console.log(
+  //           'Using deliveryMethod._id as pickup station:',
+  //           deliveryMethodId
+  //         )
+  //         pickupStation = deliveryMethodId
+  //       } else {
+  //         console.log('No deliveryMethod._id found')
+  //       }
+  //     }
+
+  //     // Final fallback
+  //     if (!pickupStation) {
+  //       console.log('Using fallback pickup station ID')
+  //       pickupStation = '66f99da3f5ca7c8b1cd82b88'
+  //     }
+
+  //     console.log('Final pickup station:', pickupStation)
+
+  //     // Get delivery method ID with debugging
+  //     console.log('=== TRYING TO GET DELIVERY METHOD ID ===')
+  //     let deliveryMethodId = null
+
+  //     const deliveryMethodPaths = [
+  //       'methodDetails._id',
+  //       'methodDetails.id',
+  //       'deliveryDetails.deliveryMethod._id',
+  //       'deliveryDetails.deliveryMethod.id',
+  //       'deliveryDetails.method._id',
+  //       'deliveryDetails.method.id',
+  //     ]
+
+  //     for (const path of deliveryMethodPaths) {
+  //       const keys = path.split('.')
+  //       let current = orderData
+  //       let isValid = true
+
+  //       console.log(`Trying delivery method path: ${path}`)
+
+  //       for (let i = 0; i < keys.length; i++) {
+  //         const key = keys[i]
+  //         console.log(`  Step ${i + 1}: current[${key}] =`, current?.[key])
+
+  //         if (
+  //           current === null ||
+  //           current === undefined ||
+  //           typeof current !== 'object'
+  //         ) {
+  //           console.log(
+  //             `  Path failed at step ${i + 1}: current is not an object`
+  //           )
+  //           isValid = false
+  //           break
+  //         }
+
+  //         current = current[key]
+
+  //         if (current === null || current === undefined) {
+  //           console.log(
+  //             `  Path failed at step ${i + 1}: ${key} is null/undefined`
+  //           )
+  //           isValid = false
+  //           break
+  //         }
+  //       }
+
+  //       if (
+  //         isValid &&
+  //         current &&
+  //         typeof current === 'string' &&
+  //         (current as string).trim()
+  //       ) {
+  //         console.log(`  SUCCESS: Foundsdelivery method ID: ${current}`)
+  //         deliveryMethodId = (current as string).trim()
+  //         break
+  //       } else {
+  //         console.log(`  FAILED: Path ${path} did not yield a valid ID`)
+  //       }
+  //     }
+
+  //     if (!deliveryMethodId) {
+  //       throw new Error('Delivery method ID not found in order data')
+  //     }
+
+  //     console.log('Final delivery method ID:', deliveryMethodId)
+
+  //     // Map products with debugging
+  //     const cartProducts = orderData?.cartProducts || []
+  //     console.log('=== PROCESSING CART PRODUCTS ===')
+  //     console.log('Cart products count:', cartProducts.length)
+
+  //     if (!Array.isArray(cartProducts) || cartProducts.length === 0) {
+  //       throw new Error('No products found in cart')
+  //     }
+
+  //     // Replace the product mapping section in your createOrder function
+  //     const mappedProducts = cartProducts.map((item: any, index: number) => {
+  //       console.log(`=== PROCESSING PRODUCT ${index + 1} ===`)
+
+  //       if (!item || typeof item !== 'object') {
+  //         throw new Error(`Invalid product at index ${index}`)
+  //       }
+
+  //       const product = item?.product || item || {}
+
+  //       console.log(`Product ${index + 1} structure:`, {
+  //         hasItem: !!item,
+  //         hasProduct: !!item?.product,
+  //         itemKeys: Object.keys(item || {}),
+  //         productKeys: Object.keys(product || {}),
+  //       })
+
+  //       // Get vendor ID with debugging (your existing logic)
+  //       console.log(`=== GETTING VENDOR ID FOR PRODUCT ${index + 1} ===`)
+  //       let vendorId = null
+
+  //       const vendorSources = [
+  //         () => product?.vendor?._id,
+  //         () => product?.vendor?.id,
+  //         () => product?.vendor,
+  //         () => product?.vendorId,
+  //         () => product?.vendorID,
+  //         () => item?.vendorId,
+  //         () => item?.vendorID,
+  //         () => item?.vendor?._id,
+  //         () => item?.vendor?.id,
+  //         () => item?.vendor,
+  //         () => orderData?.session?.userId,
+  //       ]
+
+  //       const vendorSourceNames = [
+  //         'product.vendor._id',
+  //         'product.vendor.id',
+  //         'product.vendor',
+  //         'product.vendorId',
+  //         'product.vendorID',
+  //         'item.vendorId',
+  //         'item.vendorID',
+  //         'item.vendor._id',
+  //         'item.vendor.id',
+  //         'item.vendor',
+  //         'session.userId',
+  //       ]
+
+  //       for (let i = 0; i < vendorSources.length; i++) {
+  //         try {
+  //           const value = vendorSources[i]()
+  //           console.log(`Vendor source ${vendorSourceNames[i]}:`, value)
+  //           if (value && typeof value === 'string' && value.trim()) {
+  //             vendorId = value.trim()
+  //             console.log(
+  //               `SUCCESS: Using vendor ID from ${vendorSourceNames[i]}:`,
+  //               vendorId
+  //             )
+  //             break
+  //           }
+  //         } catch (error) {
+  //           console.log(
+  //             `Error getting vendor from ${vendorSourceNames[i]}:`,
+  //             error
+  //           )
+  //         }
+  //       }
+
+  //       if (!vendorId) {
+  //         console.log('Using fallback vendor ID')
+  //         vendorId = '66f99da3f5ca7c8b1cd82b88'
+  //       }
+
+  //       // Get product ID with debugging (your existing logic)
+  //       console.log(`=== GETTING PRODUCT ID FOR PRODUCT ${index + 1} ===`)
+  //       let productId = null
+
+  //       const productIdSources = [
+  //         () => product?._id,
+  //         () => product?.id,
+  //         () => product?.productId,
+  //         () => product?.productID,
+  //         () => item?.productId,
+  //         () => item?.productID,
+  //         () => item?.id,
+  //         () => item?._id,
+  //       ]
+
+  //       const productIdSourceNames = [
+  //         'product._id',
+  //         'product.id',
+  //         'product.productId',
+  //         'product.productID',
+  //         'item.productId',
+  //         'item.productID',
+  //         'item.id',
+  //         'item._id',
+  //       ]
+
+  //       for (let i = 0; i < productIdSources.length; i++) {
+  //         try {
+  //           const value = productIdSources[i]()
+  //           console.log(`Product ID source ${productIdSourceNames[i]}:`, value)
+  //           if (
+  //             value &&
+  //             (typeof value === 'string' || typeof value === 'number')
+  //           ) {
+  //             productId = String(value).trim()
+  //             console.log(
+  //               `SUCCESS: Using product ID from ${productIdSourceNames[i]}:`,
+  //               productId
+  //             )
+  //             break
+  //           }
+  //         } catch (error) {
+  //           console.log(
+  //             `Error getting product ID from ${productIdSourceNames[i]}:`,
+  //             error
+  //           )
+  //         }
+  //       }
+
+  //       if (!productId) {
+  //         throw new Error(`Product ID not found for product at index ${index}`)
+  //       }
+
+  //       // Get pricing information with priority handling
+  //       console.log(`=== GETTING PRICING INFO FOR PRODUCT ${index + 1} ===`)
+
+  //       // Get regular price
+  //       const regularPrice = Number(product?.price || item?.price || 0)
+  //       console.log(`Regular price: ${regularPrice}`)
+
+  //       // Get discounted price - check multiple sources with priority
+  //       let discountedPrice = null
+
+  //       const discountedPriceSources = [
+  //         () => item?.discountedPrice,
+  //         () => product?.discountedPrice,
+  //         () => item?.discounted_price,
+  //         () => product?.discounted_price,
+  //         () => item?.salePrice,
+  //         () => product?.salePrice,
+  //         () => item?.sale_price,
+  //         () => product?.sale_price,
+  //       ]
+
+  //       const discountedPriceSourceNames = [
+  //         'item.discountedPrice',
+  //         'product.discountedPrice',
+  //         'item.discounted_price',
+  //         'product.discounted_price',
+  //         'item.salePrice',
+  //         'product.salePrice',
+  //         'item.sale_price',
+  //         'product.sale_price',
+  //       ]
+
+  //       for (let i = 0; i < discountedPriceSources.length; i++) {
+  //         try {
+  //           const value = discountedPriceSources[i]()
+  //           console.log(
+  //             `Discounted price source ${discountedPriceSourceNames[i]}:`,
+  //             value
+  //           )
+
+  //           if (
+  //             value !== null &&
+  //             value !== undefined &&
+  //             !isNaN(Number(value))
+  //           ) {
+  //             const numValue = Number(value)
+  //             if (numValue > 0 && numValue < regularPrice) {
+  //               discountedPrice = numValue
+  //               console.log(
+  //                 `SUCCESS: Using discounted price from ${discountedPriceSourceNames[i]}: ${discountedPrice}`
+  //               )
+  //               break
+  //             }
+  //           }
+  //         } catch (error) {
+  //           console.log(
+  //             `Error getting discounted price from ${discountedPriceSourceNames[i]}:`,
+  //             error
+  //           )
+  //         }
+  //       }
+
+  //       console.log(
+  //         `Final pricing - Regular: ${regularPrice}, Discounted: ${discountedPrice}`
+  //       )
+
+  //       // Build the mapped product object
+  //       const mappedProduct: any = {
+  //         productID: productId,
+  //         quantity: Number(item?.quantity || 1),
+  //         price: regularPrice,
+  //         vendorID: vendorId,
+  //       }
+
+  //       // Add discounted price if available
+  //       if (discountedPrice !== null && discountedPrice > 0) {
+  //         mappedProduct.discountedPrice = discountedPrice
+  //         console.log(`Added discounted price to product: ${discountedPrice}`)
+  //       }
+
+  //       // Add dimensions if available
+  //       if (product?.length) {
+  //         mappedProduct.length = Number(product.length)
+  //       }
+  //       if (product?.width) {
+  //         mappedProduct.breadth = Number(product.width)
+  //       }
+
+  //       console.log(`Final mapped product ${index + 1}:`, mappedProduct)
+  //       return mappedProduct
+  //     })
+
+  //     console.log('=== ALL PRODUCTS MAPPED ===')
+  //     console.log('Total mapped products:', mappedProducts.length)
+
+  //     // Build delivery address
+  //     const addressString =
+  //       orderData?.deliveryDetails?.deliveryAddress?.addressString || ''
+  //     const latitude =
+  //       orderData?.deliveryDetails?.deliveryAddress?.geolocation?.latitude || 0
+  //     const longitude =
+  //       orderData?.deliveryDetails?.deliveryAddress?.geolocation?.longitude || 0
+  //     const postCode =
+  //       orderData?.deliveryDetails?.deliveryAddress?.postCode || '00000'
+
+  //     if (!addressString) {
+  //       throw new Error('Delivery address is required')
+  //     }
+
+  //     const deliveryAddress = {
+  //       addressString: String(addressString),
+  //       geoLocation: [Number(latitude), Number(longitude)],
+  //       postCode: String(postCode),
+  //     }
+
+  //     // Build order payload
+  //     const email = orderData?.email || ''
+  //     if (!email) {
+  //       throw new Error('Email address is required')
+  //     }
+
+  //     const totalAmount = Number(orderData?.totalAmount || 0)
+  //     if (totalAmount <= 0) {
+  //       throw new Error('Total amount must be greater than 0')
+  //     }
+
+  //     const orderPayload = {
+  //       emailAddress: String(email),
+  //       products: mappedProducts,
+  //       paymentRef: { reference: String(verifiedRef) },
+  //       deliveryMethod: String(deliveryMethodId),
+  //       paymentMethod: 'paystack' as const,
+  //       deliveryAddress,
+  //       deliveryFee: Number(orderData?.methodDetails?.fee || 0),
+  //       taxFee: Number(orderData?.taxFee || 0),
+  //       totalAmount,
+  //       // Add promo code if available
+  //       ...(orderData?.promoCode && { promoCode: String(orderData.promoCode) }),
+  //       ...(orderData?.promocode && { promoCode: String(orderData.promocode) }),
+  //       ...(orderData?.couponCode && {
+  //         promoCode: String(orderData.couponCode),
+  //       }),
+  //       // Add discount amount if available
+  //       ...(orderData?.discountAmount && {
+  //         discountAmount: Number(orderData.discountAmount),
+  //       }),
+  //       ...(orderData?.discount && {
+  //         discountAmount: Number(orderData.discount),
+  //       }),
+  //       orderType: 'customer' as const,
+  //       orderNotes: String(
+  //         orderData?.deliveryDetails?.orderDetails?.orderNote || ''
+  //       ),
+  //       deliveryPlace: deliveryPlace as 'home' | 'fulfillment_center',
+  //       pickupStation: String(pickupStation),
+  //     }
+
+  //     console.log('=== FINAL ORDER PAYLOAD ===')
+  //     console.log('Order payload:', JSON.stringify(orderPayload, null, 2))
+
+  //     // Create order
+  //     const response = isShopmate
+  //       ? await checkoutShopmateOrder({
+  //           ...orderPayload,
+  //           owner: String(
+  //             orderData?.deliveryDetails?.orderDetails?.owner?.name || ''
+  //           ),
+  //         })
+  //       : await checkoutOrder(orderPayload)
+
+  //     console.log('Order creation response:', {
+  //       hasError: response?.hasError,
+  //       message: response?.message?.substring(0, 100),
+  //     })
+
+  //     if (response?.hasError) {
+  //       throw new Error(response.message || 'Failed to create order')
+  //     }
+
+  //     return response
+  //   } catch (error) {
+  //     console.error('Order creation failed:', error)
+  //     throw error
+  //   }
+  // }
+
+  // Updated createOrder function with proper discountedPrice handling
   const createOrder = async (
     verifiedRef: string,
     orderData: StoredOrderData
@@ -422,11 +943,8 @@ const VerifyPaymentContent = () => {
         deliveryCategory === 'pickup' ? 'fulfillment_center' : 'home'
       console.log('Delivery place:', deliveryPlace)
 
-      // Try to get pickup station ID with debugging
-      console.log('=== TRYING TO GET PICKUP STATION ID ===')
+      // Get pickup station ID (your existing logic)
       let pickupStation = null
-
-      // Try all possible paths and log each attempt
       const pickupPaths = [
         'deliveryDetails.deliveryMethod.pickupLocation._id',
         'deliveryDetails.deliveryMethod.pickupLocation.id',
@@ -441,33 +959,18 @@ const VerifyPaymentContent = () => {
         let current = orderData
         let isValid = true
 
-        console.log(`Trying path: ${path}`)
-
         for (let i = 0; i < keys.length; i++) {
           const key = keys[i]
-          console.log(
-            `  Step ${i + 1}: current[${key}] =`,
-            (current as any)?.[key]
-          )
-
           if (
             current === null ||
             current === undefined ||
             typeof current !== 'object'
           ) {
-            console.log(
-              `  Path failed at step ${i + 1}: current is not an object`
-            )
             isValid = false
             break
           }
-
           current = current[key]
-
           if (current === null || current === undefined) {
-            console.log(
-              `  Path failed at step ${i + 1}: ${key} is null/undefined`
-            )
             isValid = false
             break
           }
@@ -479,55 +982,34 @@ const VerifyPaymentContent = () => {
           typeof current === 'string' &&
           (current as string).trim()
         ) {
-          console.log(`  SUCCESS: Found pickup station ID: ${current}`)
           pickupStation = (current as string).trim()
           break
-        } else {
-          console.log(`  FAILED: Path ${path} did not yield a valid ID`)
         }
       }
 
-      // If still no pickup station, try methodDetails._id and deliveryMethod._id
       if (!pickupStation) {
-        console.log('Trying methodDetails._id for pickup station...')
         const methodId =
           orderData?.methodDetails?._id || orderData?.methodDetails?.id
         if (methodId) {
-          console.log('Using methodDetails._id as pickup station:', methodId)
           pickupStation = methodId
-        } else {
-          console.log('No methodDetails._id found')
         }
       }
 
       if (!pickupStation) {
-        console.log('Trying deliveryMethod._id for pickup station...')
         const deliveryMethodId =
           orderData?.deliveryDetails?.deliveryMethod?._id ||
           orderData?.deliveryDetails?.deliveryMethod?.id
         if (deliveryMethodId) {
-          console.log(
-            'Using deliveryMethod._id as pickup station:',
-            deliveryMethodId
-          )
           pickupStation = deliveryMethodId
-        } else {
-          console.log('No deliveryMethod._id found')
         }
       }
 
-      // Final fallback
       if (!pickupStation) {
-        console.log('Using fallback pickup station ID')
         pickupStation = '66f99da3f5ca7c8b1cd82b88'
       }
 
-      console.log('Final pickup station:', pickupStation)
-
-      // Get delivery method ID with debugging
-      console.log('=== TRYING TO GET DELIVERY METHOD ID ===')
+      // Get delivery method ID (your existing logic)
       let deliveryMethodId = null
-
       const deliveryMethodPaths = [
         'methodDetails._id',
         'methodDetails.id',
@@ -542,30 +1024,18 @@ const VerifyPaymentContent = () => {
         let current = orderData
         let isValid = true
 
-        console.log(`Trying delivery method path: ${path}`)
-
         for (let i = 0; i < keys.length; i++) {
           const key = keys[i]
-          console.log(`  Step ${i + 1}: current[${key}] =`, current?.[key])
-
           if (
             current === null ||
             current === undefined ||
             typeof current !== 'object'
           ) {
-            console.log(
-              `  Path failed at step ${i + 1}: current is not an object`
-            )
             isValid = false
             break
           }
-
           current = current[key]
-
           if (current === null || current === undefined) {
-            console.log(
-              `  Path failed at step ${i + 1}: ${key} is null/undefined`
-            )
             isValid = false
             break
           }
@@ -577,11 +1047,8 @@ const VerifyPaymentContent = () => {
           typeof current === 'string' &&
           (current as string).trim()
         ) {
-          console.log(`  SUCCESS: Foundsdelivery method ID: ${current}`)
           deliveryMethodId = (current as string).trim()
           break
-        } else {
-          console.log(`  FAILED: Path ${path} did not yield a valid ID`)
         }
       }
 
@@ -589,36 +1056,21 @@ const VerifyPaymentContent = () => {
         throw new Error('Delivery method ID not found in order data')
       }
 
-      console.log('Final delivery method ID:', deliveryMethodId)
-
-      // Map products with debugging
+      // Map products (your existing logic - but without adding discountedPrice to individual products)
       const cartProducts = orderData?.cartProducts || []
-      console.log('=== PROCESSING CART PRODUCTS ===')
-      console.log('Cart products count:', cartProducts.length)
-
       if (!Array.isArray(cartProducts) || cartProducts.length === 0) {
         throw new Error('No products found in cart')
       }
 
       const mappedProducts = cartProducts.map((item: any, index: number) => {
-        console.log(`=== PROCESSING PRODUCT ${index + 1} ===`)
-
         if (!item || typeof item !== 'object') {
           throw new Error(`Invalid product at index ${index}`)
         }
 
         const product = item?.product || item || {}
-        console.log(`Product ${index + 1} structure:`, {
-          hasItem: !!item,
-          hasProduct: !!item?.product,
-          itemKeys: Object.keys(item || {}),
-          productKeys: Object.keys(product || {}),
-        })
 
-        // Get vendor ID with debugging
-        console.log(`=== GETTING VENDOR ID FOR PRODUCT ${index + 1} ===`)
+        // Get vendor ID (your existing logic)
         let vendorId = null
-
         const vendorSources = [
           () => product?.vendor?._id,
           () => product?.vendor?.id,
@@ -633,49 +1085,24 @@ const VerifyPaymentContent = () => {
           () => orderData?.session?.userId,
         ]
 
-        const vendorSourceNames = [
-          'product.vendor._id',
-          'product.vendor.id',
-          'product.vendor',
-          'product.vendorId',
-          'product.vendorID',
-          'item.vendorId',
-          'item.vendorID',
-          'item.vendor._id',
-          'item.vendor.id',
-          'item.vendor',
-          'session.userId',
-        ]
-
-        for (let i = 0; i < vendorSources.length; i++) {
+        for (const getSource of vendorSources) {
           try {
-            const value = vendorSources[i]()
-            console.log(`Vendor source ${vendorSourceNames[i]}:`, value)
+            const value = getSource()
             if (value && typeof value === 'string' && value.trim()) {
               vendorId = value.trim()
-              console.log(
-                `SUCCESS: Using vendor ID from ${vendorSourceNames[i]}:`,
-                vendorId
-              )
               break
             }
           } catch (error) {
-            console.log(
-              `Error getting vendor from ${vendorSourceNames[i]}:`,
-              error
-            )
+            continue
           }
         }
 
         if (!vendorId) {
-          console.log('Using fallback vendor ID')
           vendorId = '66f99da3f5ca7c8b1cd82b88'
         }
 
-        // Get product ID with debugging
-        console.log(`=== GETTING PRODUCT ID FOR PRODUCT ${index + 1} ===`)
+        // Get product ID (your existing logic)
         let productId = null
-
         const productIdSources = [
           () => product?._id,
           () => product?.id,
@@ -687,37 +1114,18 @@ const VerifyPaymentContent = () => {
           () => item?._id,
         ]
 
-        const productIdSourceNames = [
-          'product._id',
-          'product.id',
-          'product.productId',
-          'product.productID',
-          'item.productId',
-          'item.productID',
-          'item.id',
-          'item._id',
-        ]
-
-        for (let i = 0; i < productIdSources.length; i++) {
+        for (const getSource of productIdSources) {
           try {
-            const value = productIdSources[i]()
-            console.log(`Product ID source ${productIdSourceNames[i]}:`, value)
+            const value = getSource()
             if (
               value &&
               (typeof value === 'string' || typeof value === 'number')
             ) {
               productId = String(value).trim()
-              console.log(
-                `SUCCESS: Using product ID from ${productIdSourceNames[i]}:`,
-                productId
-              )
               break
             }
           } catch (error) {
-            console.log(
-              `Error getting product ID from ${productIdSourceNames[i]}:`,
-              error
-            )
+            continue
           }
         }
 
@@ -725,21 +1133,24 @@ const VerifyPaymentContent = () => {
           throw new Error(`Product ID not found for product at index ${index}`)
         }
 
-        const mappedProduct = {
+        // Build the mapped product object (WITHOUT individual discountedPrice)
+        const mappedProduct: any = {
           productID: productId,
           quantity: Number(item?.quantity || 1),
           price: Number(product?.price || item?.price || 0),
           vendorID: vendorId,
-          ...(product?.length && { length: Number(product.length) }),
-          ...(product?.width && { breadth: Number(product.width) }),
         }
 
-        console.log(`Final mapped product ${index + 1}:`, mappedProduct)
+        // Add dimensions if available
+        if (product?.length) {
+          mappedProduct.length = Number(product.length)
+        }
+        if (product?.width) {
+          mappedProduct.breadth = Number(product.width)
+        }
+
         return mappedProduct
       })
-
-      console.log('=== ALL PRODUCTS MAPPED ===')
-      console.log('Total mapped products:', mappedProducts.length)
 
       // Build delivery address
       const addressString =
@@ -767,27 +1178,73 @@ const VerifyPaymentContent = () => {
         throw new Error('Email address is required')
       }
 
-      const totalAmount = Number(orderData?.totalAmount || 0)
-      if (totalAmount <= 0) {
+      // FIXED: Calculate original total amount and discounted amount properly
+      const originalTotalAmount = Number(orderData?.totalAmount || 0) // This should be the original amount
+      const actualPaidAmount = Number(
+        orderData?.discountedPrice || originalTotalAmount
+      ) // Amount actually paid
+
+      console.log('=== PAYMENT AMOUNTS ===')
+      console.log('Original total amount:', originalTotalAmount)
+      console.log('Actual paid amount (discounted):', actualPaidAmount)
+      console.log('Promo code applied:', orderData?.promoCode)
+
+      if (originalTotalAmount <= 0) {
         throw new Error('Total amount must be greater than 0')
       }
 
-      const orderPayload = {
+      // Build the order payload with correct amounts
+      type OrderPayload = {
+        emailAddress: string
+        products: any[]
+        paymentRef: { reference: string }
+        deliveryMethod: string
+        paymentMethod: 'paystack'
+        deliveryAddress: {
+          addressString: string
+          geoLocation: number[]
+          postCode: string
+        }
+        deliveryFee: number
+        taxFee: number
+        totalAmount: number
+        orderType: 'customer'
+        orderNotes: string
+        deliveryPlace: 'home' | 'fulfillment_center'
+        pickupStation: string
+        promoCode?: string
+        discountedPrice?: number
+      }
+
+      const orderPayload: OrderPayload = {
         emailAddress: String(email),
         products: mappedProducts,
         paymentRef: { reference: String(verifiedRef) },
         deliveryMethod: String(deliveryMethodId),
-        paymentMethod: 'paystack' as const,
+        paymentMethod: 'paystack',
         deliveryAddress,
         deliveryFee: Number(orderData?.methodDetails?.fee || 0),
         taxFee: Number(orderData?.taxFee || 0),
-        totalAmount,
-        orderType: 'customer' as const,
+        totalAmount: originalTotalAmount, // Original amount before discount
+        orderType: 'customer',
         orderNotes: String(
           orderData?.deliveryDetails?.orderDetails?.orderNote || ''
         ),
         deliveryPlace: deliveryPlace as 'home' | 'fulfillment_center',
         pickupStation: String(pickupStation),
+      }
+
+      // Add promo code if available
+      if (orderData?.promoCode) {
+        orderPayload.promoCode = String(orderData.promoCode)
+      }
+
+      // Add discounted price if promo code was applied
+      if (
+        orderData?.discountedPrice &&
+        orderData?.discountedPrice < originalTotalAmount
+      ) {
+        orderPayload.discountedPrice = actualPaidAmount
       }
 
       console.log('=== FINAL ORDER PAYLOAD ===')
@@ -877,6 +1334,40 @@ const VerifyPaymentContent = () => {
       if (!orderResponse?.hasError) {
         console.log('Order created successfully')
         setStatus('success')
+
+        // Clear carts with proper error handling and logging
+        try {
+          console.log('Starting cart clearing process...')
+
+          // Clear Redux cart first (this is synchronous and reliable)
+          dispatch(cartActions.clearCart())
+          console.log('Redux cart cleared successfully')
+
+          // Clear server cart with retry logic
+          const clearResult = await clearCart(3) // 3 retry attempts
+
+          if (clearResult.hasError) {
+            console.error('Failed to clear server cart:', clearResult.message)
+            // You might want to show a warning to user or retry later
+            // Don't throw error here as order was already created successfully
+          } else {
+            console.log('Server cart cleared successfully')
+          }
+
+          // Clear session storage after successful cart clearing
+          try {
+            sessionStorage.removeItem('pendingOrderData')
+            console.log('Session storage cleared')
+          } catch (error) {
+            console.error('Failed to clear session storage:', error)
+          }
+        } catch (error) {
+          console.error('Error during cart clearing process:', error)
+          // Don't throw error here as order was already created successfully
+          // You might want to show a non-blocking notification to user
+        }
+
+        // Redirect after a delay regardless of cart clearing result
         setTimeout(() => {
           router.push('/order-success')
         }, 2000)
