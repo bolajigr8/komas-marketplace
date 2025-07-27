@@ -25,25 +25,36 @@ type PropsType = {
 const slides = [
   {
     id: 1,
-    image: '/Images/Home/slide1.webp',
+    // image: '/Images/Home/slide1.webp',
+    image: '/Images/Home/New Home Pics/_komas-Beauty Perfume Banner/2.png',
+
     // title: "Shop Global, Delivered Local",
     // subtitle: "Fast same-day delivery from ₦200",
-    title: 'Transform Your Space',
-    subtitle: 'Lowest price guaranteed',
+    title: 'Beauty Perfume',
+    subtitle: 'White new organic formula for your daily use',
   },
   {
     id: 2,
-    image: '/Images/Home/slide2.webp',
-    // title: "Quality Products, Amazing Prices",
-    // subtitle: "Shop with confidence from verified sellers",
-    itle: 'Shop Smart, Live Smart',
-    subtitle: 'Exclusive tech deals',
+    // image: '/Images/Home/slide2.webp',
+    image: '/Images/Home/New Home Pics/komas-Cosmetic skincare/2.png',
+
+    title: 'Cosmetic Sale',
+    subtitle: 'Your Favorite Brands at Irresistible Prices',
   },
   {
     id: 3,
-    image: '/Images/Home/slide3.webp',
-    title: 'Flash Sales & Deals',
-    subtitle: 'Up to 70% off on trending items',
+    image: '/Images/Home/New Home Pics/komas-Skincare & Cosmetics Promo/2.png',
+
+    title: ' Liceria Beauty SkinCare',
+    subtitle:
+      'Infused with rosehip and olive oil, help tighten, lighten and enrich your skin',
+  },
+  {
+    id: 4,
+    image: '/Images/Home/New Home Pics/pef-komas/2.png',
+
+    title: ' Borcelle Beauty SkinCare',
+    subtitle: 'Glow Naturally with Borcelle, Now on Sale!',
   },
 ]
 
@@ -69,7 +80,7 @@ export default function HeroSection({ query, category }: PropsType) {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
 
   return (
-    <section className='relative w-full min-h-[600px] lg:min-h-[700px] overflow-hidden'>
+    <section className='relative w-full min-h-[630px] lg:min-h-[670px] overflow-hidden'>
       <AnimatePresence mode='wait'>
         <motion.div
           // key={currentSlide}
@@ -98,7 +109,7 @@ export default function HeroSection({ query, category }: PropsType) {
             className='object-cover'
             priority
           />
-          <div className='absolute inset-0 bg-black/40' />
+          <div className='absolute inset-0 bg-black/30' />
         </motion.div>
       </AnimatePresence>
 

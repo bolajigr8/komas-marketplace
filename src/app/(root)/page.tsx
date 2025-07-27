@@ -21,6 +21,8 @@ import { getProducts } from '@/lib/server-actions/product'
 import { getCategories as fetchCategories } from '@/lib/server-actions/category'
 import { divideProductsByCategory } from '@/lib/utils'
 import { bgSliderProducts } from '@/data/bgSlider'
+import ProductsListSlider from '@/components/General/ProductsListSlider'
+import WorkWithUs from '@/components/General/WorkWithUs'
 
 // Types
 type DisplayCategoriesAndProductsProps = {
@@ -117,10 +119,21 @@ const DisplayCategoriesAndProducts = async ({
         baseRoute='/category/'
       />
 
-      <ProductsList
+      <ProductsListSlider
         products={latest10ProductsFirst}
         showCartBtn
         title='Featured Products'
+      />
+      <ProductsListSlider
+        products={latest10ProductsFirst}
+        showCartBtn
+        title='Deals For You'
+      />
+
+      <ProductsList
+        products={latest10ProductsFirst}
+        showCartBtn
+        title='We Think You Will Like'
       />
 
       {/* <ProductsList
@@ -138,13 +151,20 @@ const DisplayCategoriesAndProducts = async ({
         title='Featured Products'
       /> */}
 
-      <BgCardsSlider products={bgSliderProducts} />
+      {/* <BgCardsSlider products={bgSliderProducts} /> */}
+      <BgCardsSlider />
 
       <ProductsList
         title='Popular Products'
-        products={latest10ProductsSecond}
+        products={latest10ProductsFirst}
         showCartBtn
       />
+
+      {/* <ProductsList
+        title='Popular Products'
+        products={latest10ProductsSecond}
+        showCartBtn
+      /> */}
       {/* <ProductsList
         title='Popular Products'
         products={products.data?.products.slice(10, 20) || []}
@@ -152,13 +172,17 @@ const DisplayCategoriesAndProducts = async ({
       /> */}
 
       <section className='px-4 mb-12'>
-        <BgCard
-          backgroundImage='/Images/Home/flatTommy/flatTommy.png'
-          text='Enjoy easy and fast same day delivery on this jellof Spaghetti Combo.'
-          className='max-w-[69rem] mx-auto min-h-[300px]'
-          product={bgSliderProducts[0]}
-        />
+        {/* <BgCard
+          // backgroundImage='/Images/Home/flatTommy/flatTommy.png'
+          // text='Enjoy easy and fast same day delivery on this jellof Spaghetti Combo.'
+          // className='max-w-[69rem] mx-auto min-h-[300px]'
+          // product={bgSliderProducts[0]}
+        /> */}
+        <BgCardsSlider />
       </section>
+
+      {/* services display section by cards */}
+      <WorkWithUs />
     </>
   )
 }

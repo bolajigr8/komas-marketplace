@@ -105,7 +105,7 @@ const AllCategoriesPage = () => {
   const [totalProducts, setTotalProducts] = useState(0)
 
   // Pagination state
-  const itemsPerPage = 9
+  const itemsPerPage = 14
   const currentPage = pageParam ? parseInt(pageParam) : 1
   const totalPages = Math.ceil(totalProducts / itemsPerPage)
 
@@ -388,7 +388,7 @@ const AllCategoriesPage = () => {
   }
 
   return (
-    <div className='max-w-7xl mx-auto px-4 py-8'>
+    <div className='max-w-7xl mx-auto mt-10 px-4 py-8'>
       <div className='mb-8'>
         <h1 className='text-3xl font-bold text-gray-900'>All Products</h1>
         <p className='text-gray-600 mt-2'>
