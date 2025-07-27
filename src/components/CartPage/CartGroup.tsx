@@ -26,7 +26,7 @@ export const CartGroup = ({
   cartItems: CartItem[]
   vendor: Vendor
 }) => {
-  console.log('cart items from cart group', cartItems)
+  // console.log('cart items from cart group', cartItems)
 
   return (
     <div className='bg-white rounded-xl shadow-md p-6 space-y-4'>
@@ -44,7 +44,7 @@ export const CartGroup = ({
         ))}
       </div>
 
-      <CartGroupSummary cartItems={cartItems} vendor={vendor} />
+      {/* <CartGroupSummary cartItems={cartItems} vendor={vendor} /> */}
     </div>
   )
 }

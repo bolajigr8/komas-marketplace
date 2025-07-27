@@ -26,11 +26,11 @@ const CartGroups = ({ cart }: CartGroupsProps) => {
     }
   }, [cart])
 
-  console.log('processed cart from cart groups', processedCart)
+  // console.log('processed cart from cart groups', processedCart)
 
   return (
-    <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
-      <div className='lg:col-span-2 space-y-6'>
+    <div className='grid grid-cols-1 lg:grid-cols-5 gap-8 relative '>
+      <div className='lg:col-span-3 space-y-6 pb-32 lg:pb-0'>
         {Object.entries(processedCart).map(([vendorId, items], index) => (
           <CartGroup
             key={vendorId}
@@ -41,8 +41,10 @@ const CartGroups = ({ cart }: CartGroupsProps) => {
           />
         ))}
       </div>
-      <div className='lg:col-span-1'>
-        <TotalSummary cartItems={allItems} />
+      <div className='lg:col-span-2 sticky bottom-4 lg:static lg:bottom-auto z-[49] lg:z-auto '>
+        <div className='bg-white rounded-xl shadow-md p-6  lg:p-2 lg:px-2 lg:w-full lg:max-w-none '>
+          <TotalSummary cartItems={allItems} />
+        </div>
       </div>
     </div>
   )

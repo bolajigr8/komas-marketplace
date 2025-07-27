@@ -18,7 +18,10 @@ import { useAppDispatch, useAppSelector } from '@/redux-store/hooks'
 import { useCart } from '@/hooks/queries'
 import { cartActions } from '@/redux-store/store-slices/CartSlice'
 import { ChevronDown, Lock } from './Icons'
+// Alternative: Import from react-icons if ChevronDown isn't working
+// import { IoChevronDown } from 'react-icons/io5'
 import { useSession } from 'next-auth/react'
+import { IoChevronDown } from 'react-icons/io5'
 
 export default function CartHeaderDisplay() {
   const dispatch = useAppDispatch()
@@ -30,33 +33,22 @@ export default function CartHeaderDisplay() {
   const { data, isLoading } = useCart()
   const { data: session, status } = useSession()
 
-  // console.log('Cart items:', cartItems)
-
-  // useEffect(() => {
-  //   if (data) {
-  //     dispatch(
-  //       cartActions.setCart({
-  //         products: data.map((item) => ({
-  //           ...item.product,
-  //         })),
-  //         isAuthenticated: !!session?.user,
-  //       })
-  //     );
-  //   }
-  // }, [data, dispatch]);
-  // const dd = data.map((item) => ({
-  //   ...item.product,
-  //   quantity: item.quantity,
-  // }));
-
-  // console.log(dd);
   return (
     <Dropdown>
       <DropdownTrigger>
         <Button
           variant='light'
-          className='p-0 hover:bg-[#3BB77E]/10 transition-colors focus:outline-none focus:ring-0'
-          endContent={<ChevronDown className='text-default-500' size={16} />}
+          className='p-2 hover:bg-[#3BB77E]/10 transition-colors focus:outline-none focus:ring-0'
+          endContent={
+            // Option 1: If ChevronDown from ./Icons works
+            // <ChevronDown className='text-default-500' size={16} />
+
+            // Option 2: If ChevronDown isn't working, use react-icons
+            <IoChevronDown className='text-default-500' size={16} />
+
+            // Option 3: Simple Unicode arrow as fallback
+            // <span className="text-default-500">▼</span>
+          }
         >
           <Badge
             content={isLoading ? undefined : quantity}
@@ -88,7 +80,6 @@ export default function CartHeaderDisplay() {
               className='focus:outline-none focus:ring-2 focus:ring-[#3bb77e]'
               description={`Quantity: ${item.quantity ?? 0}`}
               href={`/product/${item.product?._id}`}
-              // href="/product/${item._id"
               startContent={
                 <Image
                   src={item.product?.images?.[0] || '/placeholder.png'}
@@ -108,31 +99,6 @@ export default function CartHeaderDisplay() {
             </DropdownItem>
           ))}
         </DropdownSection>
-
-        {/* <DropdownSection
-          title={`Cart (${cartItems.length})`}
-          items={cartItems.slice(0, 5)}
-          showDivider
-        >
-          {(item, index) => (
-            <DropdownItem
-              key={item.product?._id || item._id || 9}
-              description={`Quantity: ${item.quantity || 0}`}
-              startContent={
-                <Image
-                  src={item.product?.images?.[0]}
-                  alt={item.product?.name || "Product Image"}
-                  width={40}
-                  height={40}
-                  className="rounded-md object-cover"
-                />
-              }
-            >
-              <p className="font-medium truncate">{item.product?.name}</p>
-              <p className="text-[#3BB77E] text-sm">${item.product?.price}</p>
-            </DropdownItem>
-          )}
-        </DropdownSection> */}
 
         <DropdownSection>
           <DropdownItem

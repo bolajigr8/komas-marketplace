@@ -403,7 +403,7 @@ const SingleCategoryPage = () => {
   }
 
   return (
-    <div className='max-w-7xl mx-auto px-4 py-8'>
+    <div className='max-w-7xl border-2  mt-10  bg-white mx-auto px-4 py-8'>
       <div className='mb-8'>
         <h1 className='text-3xl font-bold text-gray-900'>
           {categoryInfo.name || 'Category'}

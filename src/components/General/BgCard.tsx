@@ -68,9 +68,7 @@ const BgCard = ({
 }: PropsType) => {
   return (
     <div className='mb-3 w-full'>
-      <div
-        className={`rounded-xl relative ${className} w-full overflow-hidden`}
-      >
+      <div className={` relative ${className} w-full overflow-hidden`}>
         {/* Using Next.js Image component */}
         <Image
           src={backgroundImage}

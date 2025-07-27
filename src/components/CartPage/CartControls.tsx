@@ -30,7 +30,7 @@ const CartControls = ({ productId, quantity }: PropsType) => {
   const dispatch = useAppDispatch()
   const router = useRouter()
 
-  console.log('product id from the cart controls', productId)
+  // console.log('product id from the cart controls', productId)
 
   useEffect(() => {
     const calculatePrice = () => {
@@ -130,7 +130,7 @@ const CartControls = ({ productId, quantity }: PropsType) => {
           onClick={handleDelete}
           disabled={isDeleting}
           className='
-            text-blue-500 hover:text-red-700 
+            text-black hover:text-red-700 
             disabled:opacity-50 
             transition-colors
           '

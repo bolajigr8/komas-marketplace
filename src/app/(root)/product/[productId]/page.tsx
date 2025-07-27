@@ -22,7 +22,7 @@ const ProductDetails = async ({ params: { productId } }: PropsType) => {
   if (productRes.hasError && ![404, 500].includes(productRes.statusCode))
     throw new Error(productRes.message)
 
-  console.log('data', productRes)
+  // console.log('data', productRes)
 
   if (!productRes.data) notFound()
 
