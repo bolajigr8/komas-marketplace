@@ -45,7 +45,7 @@ export default function CheckoutButton() {
           <PiShoppingCartSimpleLight size={24} className='text-black' />
 
           {/* Quantity Badge */}
-          {/* <motion.div
+          <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             className='absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black border-2 border-white flex items-center justify-center'
@@ -53,7 +53,7 @@ export default function CheckoutButton() {
             <span className='text-white text-xs font-bold'>
               {quantity > 99 ? '99+' : quantity}
             </span>
-          </motion.div> */}
+          </motion.div>
         </button>
       </motion.div>
     </AnimatePresence>
