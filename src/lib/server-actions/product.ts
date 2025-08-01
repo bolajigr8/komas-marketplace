@@ -353,19 +353,36 @@ export const getCartProducts = async (): Promise<
 export const addProductToCart = async ({
   productId,
   quantity,
+  variantId,
 }: {
   productId: string
   quantity: number
+  variantId?: string
 }): Promise<FetchResult<null>> => {
   try {
-    console.log('Adding product to cart:', { productId, quantity })
+    console.log('Adding product to cart:', { productId, quantity, variantId })
+
+    // Create the request body - only include variantId if it exists
+    const requestBody: {
+      productId: string
+      quantity: number
+      variantId?: string
+    } = {
+      productId,
+      quantity,
+    }
+
+    // Only add variantId to the request if it's provided
+    if (variantId) {
+      requestBody.variantId = variantId
+    }
 
     const res = await fetchWithAuth(`/cart/add`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ productId, quantity }),
+      body: JSON.stringify(requestBody),
     })
 
     console.log('Add to cart response status:', res.status)
@@ -399,23 +416,43 @@ export const addProductToCart = async ({
     }
   }
 }
-
 export const removeProductFromCart = async ({
   productId,
   quantity,
+  variantId,
 }: {
   productId: string
   quantity: number
+  variantId?: string
 }): Promise<FetchResult<null>> => {
   try {
-    console.log('Removing product from cart:', { productId, quantity })
+    console.log('Removing product from cart:', {
+      productId,
+      quantity,
+      variantId,
+    })
+
+    // Create the request body - only include variantId if it exists
+    const requestBody: {
+      productId: string
+      quantity: number
+      variantId?: string
+    } = {
+      productId,
+      quantity,
+    }
+
+    // Only add variantId to the request if it's provided
+    if (variantId) {
+      requestBody.variantId = variantId
+    }
 
     const res = await fetchWithAuth(`/cart/remove`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ productId, quantity }),
+      body: JSON.stringify(requestBody),
     })
 
     console.log('Remove from cart response status:', res.status)
@@ -449,29 +486,6 @@ export const removeProductFromCart = async ({
     }
   }
 }
-
-// // Clear Cart
-// export const clearCart = async (): Promise<{
-//   statusCode: number
-//   hasError: boolean
-//   message: string
-//   data: any
-// }> => {
-//   try {
-//     const res = await fetchWithAuth('/cart/clear', {
-//       method: 'GET',
-//     })
-
-//     return await res.json()
-//   } catch (error: any) {
-//     return {
-//       statusCode: error.code || 500,
-//       hasError: true,
-//       message: 'Failed to clear cart',
-//       data: null,
-//     }
-//   }
-// }
 
 export const clearCart = async (
   retryCount = 3

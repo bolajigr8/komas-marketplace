@@ -76,6 +76,7 @@ export interface ProductVariant {
   quantity: number
   price: string
   images: string[]
+  variantId?: string
 }
 
 // Updated Product interface with variants
@@ -101,6 +102,7 @@ export interface Product extends BaseData {
   discount?: number
   salesCount?: number
   isApproved?: string
+  selectedVariant?: ProductVariant // Optional for selected variant
   variants?: ProductVariant[] // Added variants as optional
 }
 

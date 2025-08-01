@@ -13,6 +13,7 @@ import { cartActions } from '@/redux-store/store-slices/CartSlice'
 import { useAppDispatch, useAppSelector } from '@/redux-store/hooks'
 import { useToast } from '@/hooks/use-toast'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import CartCounter from '../CartPage/CartCounter'
 import { Button } from '../ui/button'
 
@@ -32,16 +33,20 @@ const ProductDetailsCard = ({ product }: PropsType) => {
   const [quantity, setQuantity] = useState<number>(1)
   const [selectedVariant, setSelectedVariant] = useState<SelectedVariant>({})
   const [isSync, setIsSync] = useState(true)
+  const [isBuyingNow, setIsBuyingNow] = useState(false)
   const dispatch = useAppDispatch()
   const { toast } = useToast()
   const { data: session } = useSession()
+  const router = useRouter()
 
   console.log('Product Details Section', product)
 
   const cartProducts = useAppSelector((state) => state.cart.products)
-  const cartItem = cartProducts.find(
-    (item) => item.product?._id === product._id
-  )
+
+  // Create a unique identifier for cart items that includes variant info
+  const createCartItemId = (productId: string, variantId?: string) => {
+    return variantId ? `${productId}-${variantId}` : productId
+  }
 
   // Extract unique colors and sizes from variants
   const availableOptions = useMemo(() => {
@@ -138,7 +143,7 @@ const ProductDetailsCard = ({ product }: PropsType) => {
     return sizesForSelectedColor.includes(size)
   }
 
-  // Get current variant based on selection
+  // Get current variant based on selection - MOVED UP BEFORE cartItem
   const currentVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) return null
 
@@ -148,6 +153,21 @@ const ProductDetailsCard = ({ product }: PropsType) => {
         variant.size === selectedVariant.size
     )
   }, [product.variants, selectedVariant])
+
+  // Find cart item that matches both product and variant - NOW AFTER currentVariant
+  const cartItem = useMemo(() => {
+    const currentVariantId = currentVariant?._id
+    const cartItemId = createCartItemId(product._id, currentVariantId)
+
+    return cartProducts.find((item) => {
+      const itemVariantId = item.product?.selectedVariant?.variantId
+      const itemCartId = createCartItemId(
+        item.product?._id || '',
+        itemVariantId
+      )
+      return itemCartId === cartItemId
+    })
+  }, [cartProducts, product._id, currentVariant]) // Updated dependency
 
   // Calculate current price and stock - DEFAULT TO PRODUCT VALUES
   const currentPrice = useMemo(() => {
@@ -186,7 +206,7 @@ const ProductDetailsCard = ({ product }: PropsType) => {
     return Boolean(selectedVariant.size)
   }, [product.variants, availableOptions.sizes, selectedVariant.size])
 
-  // Get current cart quantity for this product
+  // Get current cart quantity for this specific product variant combination
   const currentCartQuantity = cartItem ? cartItem.quantity : 0
 
   useEffect(() => {
@@ -238,14 +258,7 @@ const ProductDetailsCard = ({ product }: PropsType) => {
       // Create product data with selected variant info
       const productWithVariant = {
         ...product,
-        selectedVariant: currentVariant
-          ? {
-              color: selectedVariant.color,
-              size: selectedVariant.size,
-              price: currentPrice,
-              variantId: currentVariant._id,
-            }
-          : null,
+        selectedVariant: currentVariant ? currentVariant : undefined,
         price: currentPrice, // Use current price based on variant or default
       }
 
@@ -266,7 +279,7 @@ const ProductDetailsCard = ({ product }: PropsType) => {
         const res = await addProductToCart({
           productId: product._id,
           quantity: 1,
-          // variantId: currentVariant?._id,
+          variantId: currentVariant?._id, // Include variantId when available
         })
         if (res.hasError) throw new Error(res.message)
       }
@@ -274,6 +287,7 @@ const ProductDetailsCard = ({ product }: PropsType) => {
       dispatch(
         cartActions.removeFromCart({
           productId: product._id,
+          variantId: currentVariant?._id, // Also pass variantId for removal
         })
       )
 
@@ -284,6 +298,72 @@ const ProductDetailsCard = ({ product }: PropsType) => {
       })
     } finally {
       setIsSync(true)
+    }
+  }
+
+  const handleBuyNow = async () => {
+    if (!canAddToCart || isBuyingNow) return
+
+    try {
+      setIsBuyingNow(true)
+
+      // If product is not in cart, add it first
+      if (!cartItem) {
+        // Create product data with selected variant info
+        const productWithVariant = {
+          ...product,
+          selectedVariant: currentVariant ? currentVariant : undefined,
+          price: currentPrice,
+        }
+
+        // Add to cart
+        dispatch(
+          cartActions.addToCart({
+            product: productWithVariant,
+            quantity: 1,
+          })
+        )
+
+        // Sync with server if user is logged in
+        if (session?.user) {
+          const res = await addProductToCart({
+            productId: product._id,
+            quantity: 1,
+            variantId: currentVariant?._id, // Include variantId when available
+          })
+          if (res.hasError) {
+            // Remove from local cart if server sync fails
+            dispatch(
+              cartActions.removeFromCart({
+                productId: product._id,
+                variantId: currentVariant?._id, // Also pass variantId for removal
+              })
+            )
+            throw new Error(res.message)
+          }
+        }
+
+        toast({
+          description: 'Added to cart and proceeding to checkout',
+          duration: 2000,
+        })
+      } else {
+        toast({
+          description: 'Proceeding to checkout',
+          duration: 2000,
+        })
+      }
+
+      // Navigate to checkout
+      router.push('/checkout')
+    } catch (error) {
+      toast({
+        title: 'Error processing request',
+        description: 'Please try again',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsBuyingNow(false)
     }
   }
 
@@ -502,6 +582,7 @@ const ProductDetailsCard = ({ product }: PropsType) => {
                     </span>
                     <CartCounter
                       productId={product._id}
+                      variantId={currentVariant?._id} // Pass variantId to CartCounter
                       initialQuantity={cartItem.quantity}
                       maxQuantity={currentStock}
                     />
@@ -523,8 +604,16 @@ const ProductDetailsCard = ({ product }: PropsType) => {
                 </p>
               )}
 
-              <button className='w-full border-2 border-[#3bb77e] text-[#3bb77e] px-8 py-3 rounded-lg font-medium hover:bg-[#3bb77e] hover:text-white transition-colors'>
-                Buy Now
+              <button
+                onClick={handleBuyNow}
+                disabled={!canAddToCart || isBuyingNow}
+                className='w-full border-2 border-[#3bb77e] text-[#3bb77e] px-8 py-3 rounded-lg font-medium hover:bg-[#3bb77e] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                {isBuyingNow
+                  ? 'Processing...'
+                  : cartItem
+                  ? 'Buy Now - Go to Checkout'
+                  : 'Buy Now'}
               </button>
             </>
           ) : (

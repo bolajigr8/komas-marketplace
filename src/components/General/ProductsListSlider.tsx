@@ -66,18 +66,16 @@ const ProductsListSlider = ({
             classNames={{
               outerWrapper: 'w-full',
               innerWrapper: 'gap-2 sm:gap-3 lg:gap-4',
-              // Temu-style responsive grid:
+              // Updated responsive grid:
               // Mobile: 2 columns (50% width)
               // Tablet: 3 columns (33.33% width)
               // Small desktop: 4 columns (25% width)
               // Large desktop: 5 columns (20% width)
-              // XL desktop: 6 columns (16.66% width)
               innerWrapperItem: `
                 w-[calc(50%-0.25rem)]
                 sm:w-[calc(33.333%-0.5rem)]
                 md:w-[calc(25%-0.75rem)]
                 lg:w-[calc(20%-0.8rem)]
-                xl:w-[calc(16.666%-1rem)]
                 flex-shrink-0
               `,
               customArrowWrapper: 'block',
