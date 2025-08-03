@@ -80,10 +80,10 @@ const ProductsListSlider = ({
               `,
               customArrowWrapper: 'block',
             }}
-            customArrows={{
-              prev: <ArrowButton direction='left' />,
-              next: <ArrowButton direction='right' />,
-            }}
+            // customArrows={{
+            //   prev: <ArrowButton direction='left' />,
+            //   next: <ArrowButton direction='right' />,
+            // }}
             autoplay={false}
           >
             {products.map((product, index) => (

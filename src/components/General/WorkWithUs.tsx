@@ -6,7 +6,7 @@ const WorkWithUsCards = () => {
     {
       id: 1,
       title: 'Driver',
-      url: '/careers/delivery-driver',
+      url: 'https://work.komas500.com/driver',
       description:
         'Join our delivery team and earn flexible income while serving your community. Set your own schedule and be part of our logistics network.',
       image:
@@ -16,7 +16,7 @@ const WorkWithUsCards = () => {
     {
       id: 2,
       title: 'Vendor',
-      url: '/careers/small-business-vendor',
+      url: 'https://work.komas500.com/vendor',
       description:
         'Partner with us to showcase your products to thousands of customers. Grow your business with our platform and reach new markets.',
       image:
@@ -26,7 +26,7 @@ const WorkWithUsCards = () => {
     {
       id: 3,
       title: 'Shopmate',
-      url: '/careers/customer-service-representative',
+      url: 'https://work.komas500.com/shopmate',
       description:
         'Help customers find exactly what they need. Provide excellent service as a shopping assistant and earn competitive compensation.',
       image:
@@ -36,7 +36,7 @@ const WorkWithUsCards = () => {
     {
       id: 4,
       title: 'Pickup Agent',
-      url: '/careers/warehouse-pickup-agent',
+      url: 'https://work.komas500.com/pickupstation',
       description:
         'Be the bridge between our warehouse and delivery network. Handle order fulfillment and ensure smooth pickup operations.',
       image:

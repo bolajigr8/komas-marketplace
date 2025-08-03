@@ -26,7 +26,6 @@ interface SelectedVariant {
   size?: string
   price?: number
   quantity?: number
-  variantId?: string
 }
 
 const ProductDetailsCard = ({ product }: PropsType) => {
@@ -63,6 +62,11 @@ const ProductDetailsCard = ({ product }: PropsType) => {
 
     return { colors, sizes }
   }, [product.variants])
+
+  // Check if product has variants with both colors and sizes
+  const hasVariants = product.variants && product.variants.length > 0
+  const hasColors = availableOptions.colors.length > 0
+  const hasSizes = availableOptions.sizes.length > 0
 
   // Get variants that match current selection
   const matchingVariants = useMemo(() => {
@@ -143,31 +147,73 @@ const ProductDetailsCard = ({ product }: PropsType) => {
     return sizesForSelectedColor.includes(size)
   }
 
-  // Get current variant based on selection - MOVED UP BEFORE cartItem
+  // Get current variant based on selection - REQUIRES BOTH COLOR AND SIZE
   const currentVariant = useMemo(() => {
-    if (!product.variants || product.variants.length === 0) return null
+    console.log('=== VARIANT MATCHING DEBUG ===')
+    console.log('selectedVariant:', selectedVariant)
+    console.log('hasVariants:', hasVariants)
+    console.log('hasColors:', hasColors)
+    console.log('hasSizes:', hasSizes)
 
-    return product.variants.find(
-      (variant) =>
-        variant.color === selectedVariant.color &&
-        variant.size === selectedVariant.size
-    )
-  }, [product.variants, selectedVariant])
+    if (!product.variants || product.variants.length === 0) {
+      console.log('No variants available')
+      return null
+    }
 
-  // Find cart item that matches both product and variant - NOW AFTER currentVariant
+    // If product has variants, we need appropriate selections
+    const needsColor = hasColors
+    const needsSize = hasSizes
+
+    console.log('needsColor:', needsColor, 'selected:', selectedVariant.color)
+    console.log('needsSize:', needsSize, 'selected:', selectedVariant.size)
+
+    // Check if we have all required selections
+    if (needsColor && !selectedVariant.color) {
+      console.log('Color required but not selected')
+      return null
+    }
+
+    if (needsSize && !selectedVariant.size) {
+      console.log('Size required but not selected')
+      return null
+    }
+
+    // Find matching variant
+    const found = product.variants.find((variant) => {
+      const colorMatch = !needsColor || variant.color === selectedVariant.color
+      const sizeMatch = !needsSize || variant.size === selectedVariant.size
+
+      console.log(`Checking variant ${variant._id}:`)
+      console.log(
+        `- color match: ${variant.color} === ${selectedVariant.color} = ${colorMatch}`
+      )
+      console.log(
+        `- size match: ${variant.size} === ${selectedVariant.size} = ${sizeMatch}`
+      )
+
+      return colorMatch && sizeMatch
+    })
+
+    console.log('Found variant:', found)
+    return found || null
+  }, [product.variants, selectedVariant, hasColors, hasSizes])
+
+  // Find cart item that matches both product and variant
   const cartItem = useMemo(() => {
     const currentVariantId = currentVariant?._id
-    const cartItemId = createCartItemId(product._id, currentVariantId)
 
     return cartProducts.find((item) => {
-      const itemVariantId = item.product?.selectedVariant?.variantId
-      const itemCartId = createCartItemId(
-        item.product?._id || '',
-        itemVariantId
-      )
-      return itemCartId === cartItemId
+      // Check if product matches
+      const productMatches = item.product?._id === product._id
+
+      // Check if variant matches - cart structure uses separate variant object
+      const variantMatches = currentVariantId
+        ? item.variant?._id === currentVariantId
+        : !item.variant // No variant selected and no variant in cart
+
+      return productMatches && variantMatches
     })
-  }, [cartProducts, product._id, currentVariant]) // Updated dependency
+  }, [cartProducts, product._id, currentVariant])
 
   // Calculate current price and stock - DEFAULT TO PRODUCT VALUES
   const currentPrice = useMemo(() => {
@@ -191,20 +237,31 @@ const ProductDetailsCard = ({ product }: PropsType) => {
   // Check if user has made any variant selections
   const hasVariantSelection = selectedVariant.color || selectedVariant.size
 
-  // Check if we can add to cart (either no variants, or size is selected when sizes exist)
+  // Check if we can add to cart - UPDATED LOGIC
   const canAddToCart = useMemo(() => {
-    const hasVariants = product.variants && product.variants.length > 0
-    const hasSizes = availableOptions.sizes.length > 0
-
     // If no variants exist, can always add to cart
     if (!hasVariants) return true
 
-    // If variants exist but no sizes, can add to cart
-    if (!hasSizes) return true
+    // If variants exist, check requirements
+    const needsColor = hasColors
+    const needsSize = hasSizes
 
-    // If sizes exist, must select a size to add to cart
-    return Boolean(selectedVariant.size)
-  }, [product.variants, availableOptions.sizes, selectedVariant.size])
+    // Must select color if colors exist
+    if (needsColor && !selectedVariant.color) return false
+
+    // Must select size if sizes exist
+    if (needsSize && !selectedVariant.size) return false
+
+    // Must have a valid variant match
+    return currentVariant !== null
+  }, [
+    hasVariants,
+    hasColors,
+    hasSizes,
+    selectedVariant.color,
+    selectedVariant.size,
+    currentVariant,
+  ])
 
   // Get current cart quantity for this specific product variant combination
   const currentCartQuantity = cartItem ? cartItem.quantity : 0
@@ -214,6 +271,7 @@ const ProductDetailsCard = ({ product }: PropsType) => {
   }, [dispatch, session?.user])
 
   const handleColorSelect = (color: string) => {
+    console.log('Color selected:', color)
     // Toggle selection: if clicking the same color, deselect it
     if (selectedVariant.color === color) {
       setSelectedVariant((prev) => ({
@@ -230,6 +288,7 @@ const ProductDetailsCard = ({ product }: PropsType) => {
   }
 
   const handleSizeSelect = (size: string) => {
+    console.log('Size selected:', size)
     // Toggle selection: if clicking the same size, deselect it
     if (selectedVariant.size === size) {
       setSelectedVariant((prev) => ({
@@ -255,17 +314,17 @@ const ProductDetailsCard = ({ product }: PropsType) => {
     try {
       setIsSync(false)
 
-      // Create product data with selected variant info
-      const productWithVariant = {
+      // Create product and variant objects separately to match cart structure
+      const productForCart = {
         ...product,
-        selectedVariant: currentVariant ? currentVariant : undefined,
         price: currentPrice, // Use current price based on variant or default
       }
 
       // Add only 1 item to cart (like the plus button)
       dispatch(
         cartActions.addToCart({
-          product: productWithVariant,
+          product: productForCart,
+          variant: currentVariant ?? undefined, // Separate variant object
           quantity: 1,
         })
       )
@@ -276,18 +335,24 @@ const ProductDetailsCard = ({ product }: PropsType) => {
       })
 
       if (session?.user) {
+        // Pass the variant _id correctly to the server
+        const variantId = currentVariant?._id
+        console.log('Adding to cart with variant _id:', variantId) // Debug log
+
         const res = await addProductToCart({
           productId: product._id,
           quantity: 1,
-          variantId: currentVariant?._id, // Include variantId when available
+          variantId: variantId, // This should be the _id from the variant
         })
         if (res.hasError) throw new Error(res.message)
       }
     } catch (error) {
+      // Use correct variant _id in rollback
+      const variantId = currentVariant?._id
       dispatch(
         cartActions.removeFromCart({
           productId: product._id,
-          variantId: currentVariant?._id, // Also pass variantId for removal
+          variantId: variantId,
         })
       )
 
@@ -309,34 +374,37 @@ const ProductDetailsCard = ({ product }: PropsType) => {
 
       // If product is not in cart, add it first
       if (!cartItem) {
-        // Create product data with selected variant info
-        const productWithVariant = {
+        // Create product and variant objects separately
+        const productForCart = {
           ...product,
-          selectedVariant: currentVariant ? currentVariant : undefined,
           price: currentPrice,
         }
 
         // Add to cart
         dispatch(
           cartActions.addToCart({
-            product: productWithVariant,
+            product: productForCart,
+            variant: currentVariant ?? undefined, // Separate variant object
             quantity: 1,
           })
         )
 
         // Sync with server if user is logged in
         if (session?.user) {
+          const variantId = currentVariant?._id
+          console.log('Buy now - adding to cart with variant _id:', variantId) // Debug log
+
           const res = await addProductToCart({
             productId: product._id,
             quantity: 1,
-            variantId: currentVariant?._id, // Include variantId when available
+            variantId: variantId,
           })
           if (res.hasError) {
             // Remove from local cart if server sync fails
             dispatch(
               cartActions.removeFromCart({
                 productId: product._id,
-                variantId: currentVariant?._id, // Also pass variantId for removal
+                variantId: variantId,
               })
             )
             throw new Error(res.message)
@@ -367,7 +435,18 @@ const ProductDetailsCard = ({ product }: PropsType) => {
     }
   }
 
-  const hasVariants = product.variants && product.variants.length > 0
+  // Enhanced debug logging
+  console.log('=== DEBUG INFO ===')
+  console.log('hasVariants:', hasVariants)
+  console.log('hasColors:', hasColors)
+  console.log('hasSizes:', hasSizes)
+  console.log('availableColors:', availableColors)
+  console.log('availableSizes:', availableSizes)
+  console.log('selectedVariant:', selectedVariant)
+  console.log('currentVariant:', currentVariant)
+  console.log('currentVariant _id:', currentVariant?._id)
+  console.log('canAddToCart:', canAddToCart)
+  console.log('cartItem:', cartItem)
 
   return (
     <div className='space-y-8'>
@@ -419,10 +498,10 @@ const ProductDetailsCard = ({ product }: PropsType) => {
         {hasVariants && (
           <div className='py-6 border-b space-y-6'>
             {/* Color Selection */}
-            {availableOptions.colors.length > 0 && (
+            {hasColors && (
               <div className='space-y-3'>
                 <h3 className='text-sm font-semibold text-gray-900 uppercase tracking-wide'>
-                  Color (Optional)
+                  Color (Required)
                   {selectedVariant.color &&
                     ` - Selected: ${selectedVariant.color}`}
                 </h3>
@@ -456,10 +535,10 @@ const ProductDetailsCard = ({ product }: PropsType) => {
             )}
 
             {/* Size Selection */}
-            {availableOptions.sizes.length > 0 && (
+            {hasSizes && (
               <div className='space-y-3'>
                 <h3 className='text-sm font-semibold text-gray-900 uppercase tracking-wide'>
-                  Size {availableOptions.sizes.length > 0 ? '(Required)' : ''}
+                  Size (Required)
                   {selectedVariant.size &&
                     ` - Selected: ${selectedVariant.size}`}
                 </h3>
@@ -522,16 +601,35 @@ const ProductDetailsCard = ({ product }: PropsType) => {
                     <span className='text-gray-600'>Available:</span>
                     <span className='font-medium'>{currentStock} units</span>
                   </div>
+                  {/* Debug info - enhanced */}
+                  {currentVariant && (
+                    <div className='flex items-center gap-2'>
+                      <span className='text-gray-600'>Variant _id:</span>
+                      <span className='font-medium text-xs bg-blue-100 px-2 py-1 rounded'>
+                        {currentVariant._id}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Show message when size is required but not selected */}
-            {availableOptions.sizes.length > 0 && !selectedVariant.size && (
+            {/* Show message when selections are required but not made */}
+            {!canAddToCart && hasVariants && (
               <div className='bg-amber-50 rounded-lg p-4'>
                 <p className='text-sm text-amber-700'>
-                  Please select a size to add this item to your cart. Color
-                  selection is optional.
+                  Please select{' '}
+                  {hasColors &&
+                  !selectedVariant.color &&
+                  hasSizes &&
+                  !selectedVariant.size
+                    ? 'both color and size'
+                    : hasColors && !selectedVariant.color
+                    ? 'a color'
+                    : hasSizes && !selectedVariant.size
+                    ? 'a size'
+                    : 'your preferences'}{' '}
+                  to add this item to your cart.
                 </p>
               </div>
             )}
@@ -545,12 +643,6 @@ const ProductDetailsCard = ({ product }: PropsType) => {
               <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-4'>
                 {/* Show quantity selector and cart counter together */}
                 <div className='flex items-center gap-4'>
-                  {/* <QuantitySelector
-                    value={quantity}
-                    onChange={handleChangeQuantity}
-                    max={currentStock}
-                    min={1}
-                  /> */}
                   {cartItem && (
                     <div className='flex items-center gap-2 text-sm text-gray-600'>
                       <span>In cart: {currentCartQuantity}</span>
@@ -582,7 +674,7 @@ const ProductDetailsCard = ({ product }: PropsType) => {
                     </span>
                     <CartCounter
                       productId={product._id}
-                      variantId={currentVariant?._id} // Pass variantId to CartCounter
+                      variantId={currentVariant?._id ?? undefined}
                       initialQuantity={cartItem.quantity}
                       maxQuantity={currentStock}
                     />
@@ -590,9 +682,16 @@ const ProductDetailsCard = ({ product }: PropsType) => {
                 </div>
               )}
 
-              {!canAddToCart && (
+              {!canAddToCart && hasVariants && (
                 <p className='text-sm text-amber-600 bg-amber-50 p-3 rounded-lg'>
-                  {availableOptions.sizes.length > 0 && !selectedVariant.size
+                  {hasColors &&
+                  !selectedVariant.color &&
+                  hasSizes &&
+                  !selectedVariant.size
+                    ? 'Please select both color and size before adding to cart'
+                    : hasColors && !selectedVariant.color
+                    ? 'Please select a color before adding to cart'
+                    : hasSizes && !selectedVariant.size
                     ? 'Please select a size before adding to cart'
                     : 'Please complete your selection'}
                 </p>
@@ -693,38 +792,6 @@ const ProductDetailsCard = ({ product }: PropsType) => {
           ]}
         />
       </div>
-    </div>
-  )
-}
-
-const QuantitySelector = ({
-  value,
-  onChange,
-  max,
-  min = 1,
-}: {
-  value: number
-  onChange: (quantity: number) => void
-  max: number
-  min: number
-}) => {
-  return (
-    <div className='flex items-center border rounded-lg bg-white'>
-      <button
-        onClick={() => onChange(Math.max(min, value - 1))}
-        disabled={value <= min}
-        className='px-3 py-2 text-gray-600 hover:text-[#3bb77e] disabled:text-gray-300 transition-colors'
-      >
-        <MinusIcon className='w-4 h-4' />
-      </button>
-      <span className='w-12 text-center font-medium py-2'>{value}</span>
-      <button
-        onClick={() => onChange(Math.min(max, value + 1))}
-        disabled={value >= max}
-        className='px-3 py-2 text-gray-600 hover:text-[#3bb77e] disabled:text-gray-300 transition-colors'
-      >
-        <PlusIcon className='w-4 h-4' />
-      </button>
     </div>
   )
 }

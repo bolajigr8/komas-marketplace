@@ -2,20 +2,10 @@
 
 import React from 'react'
 import CartProductCard from './CartProductCard'
-import CartGroupSummary from './CartGroupSummary'
-// import TotalSummary from "./TotalSummary";
-// import AnimatePresenseWrapper from "../General/AnimatePresenseWrapper";
-// import MotionWrapper from "../General/MotionWrapper";
+
 import { CartItem, Vendor } from '@/lib/types'
 // import { useAppSelector } from "@/redux-store/hooks";
 import { Avatar } from '@nextui-org/react'
-
-// type PropsType = {
-//   isFirstGroup: boolean;
-//   cartItems: CartItem[];
-//   totalItems: CartItem[];
-//   vendor: Vendor;
-// };
 
 export const CartGroup = ({
   isFirstGroup,

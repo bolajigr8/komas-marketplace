@@ -1,12 +1,18 @@
-import { PrivacyPolicyPage } from '@/components/PrivacyPage/privacyPolicyPage';
-import React from 'react';
+import { PrivacyPolicyPage } from '@/components/PrivacyPage/privacyPolicyPage'
+import { Metadata } from 'next'
+import React from 'react'
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'Privacy Policy',
+}
 
 const PrivacyPolicy: React.FC = () => {
   return (
-    <div className="">
+    <div className=''>
       <PrivacyPolicyPage />
     </div>
-  );
-};
+  )
+}
 
-export default PrivacyPolicy;
+export default PrivacyPolicy

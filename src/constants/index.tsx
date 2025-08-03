@@ -85,7 +85,7 @@ export const socialLinks = [
   {
     label: 'Twitter',
     href: 'https://x.com/komas500Global?t=nczrcka8lEuyLufa4fRvXg&s=09',
-    icon: <FaLinkedinIn />,
+    icon: <FaTwitter />,
   },
   {
     label: 'Instagram',
@@ -95,7 +95,7 @@ export const socialLinks = [
   {
     label: 'LinkedIn',
     href: 'https://www.linkedin.com/company/komas500/',
-    icon: <FaTwitter />,
+    icon: <FaLinkedinIn />,
   },
   {
     label: 'Tiktok',

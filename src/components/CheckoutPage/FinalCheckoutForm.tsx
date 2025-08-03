@@ -35,7 +35,7 @@ type PromoCodeState = {
 
 const safeFormatNumber = (num: number | undefined | null): string => {
   if (num === undefined || num === null) return '0'
-  const rounded = Math.ceil(num) // always round up
+  const rounded = Math.round(num) // always round up
   return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 

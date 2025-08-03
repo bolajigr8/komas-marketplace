@@ -58,7 +58,6 @@ export type User = {
   orders?: string[]
   shopmateId?: string
 }
-
 export interface BaseData {
   _id: string
   name: string
@@ -68,15 +67,17 @@ export interface BaseData {
   updatedAt: string
   __v: number
 }
-// Variant interface
+
+// Variant interface - REMOVED variantId since you're only using _id
 export interface ProductVariant {
   _id: string
   color: string
   size: string
+  name?: string
   quantity: number
   price: string
   images: string[]
-  variantId?: string
+  // Removed variantId - only use _id for variant identification
 }
 
 // Updated Product interface with variants
@@ -102,8 +103,9 @@ export interface Product extends BaseData {
   discount?: number
   salesCount?: number
   isApproved?: string
-  selectedVariant?: ProductVariant // Optional for selected variant
-  variants?: ProductVariant[] // Added variants as optional
+  // REMOVED selectedVariant - this should not be part of the base Product interface
+  // since variants are handled separately in the cart structure
+  variants?: ProductVariant[] // Variants array remains
 }
 
 export interface Category extends Omit<BaseData, 'image'> {
@@ -130,16 +132,19 @@ export interface Vendor extends BaseData {
 //   breadth: string
 // }
 
+// CORRECTED CartItem interface to match the actual cart structure from your API response
 export interface CartItem {
   userId?: string
   _id?: string
-  product: Product
+  product: Product // Product without selectedVariant
+  variant?: ProductVariant // ADDED: Separate variant object (matches your cart API structure)
   quantity: number
   length?: string
   breadth?: string
   createdAt?: string
   updatedAt?: string
 }
+
 export interface CartState {
   items: CartItem[]
   isLoading: boolean

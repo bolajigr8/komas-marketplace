@@ -546,504 +546,125 @@
 
 // export default SingleCategoryPage
 
-'use client'
-import React, { useState, useEffect } from 'react'
-import { useParams, useSearchParams, useRouter } from 'next/navigation'
-import { Product } from '@/lib/types'
+import React from 'react'
 import { getProductsByCategory } from '@/lib/server-actions/product'
-import { FeaturedProducts } from '@/components/CategoryPage/FeaturedProducts'
-import BgCardsSlider from '@/components/General/BgCardsSlider'
-import 'swiper/css'
-import 'swiper/css/navigation'
-import 'swiper/css/pagination'
-import ProductsList from '@/components/General/ProductsList'
-import ProductsListSlider from '@/components/General/ProductsListSlider'
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination'
+import { Product } from '@/lib/types'
+import SingleCategoryClient from '@/components/CategoryPage/SingleCategory'
+import { Metadata } from 'next'
 
-// Enhanced Loader Component
-const ProductsLoader = () => (
-  <div className='w-full h-64 flex items-center justify-center'>
-    <div className='text-center'>
-      <div className='loader mx-auto mb-4'></div>
-      <p className='text-gray-500 animate-pulse'>Loading products...</p>
-    </div>
-  </div>
-)
-
-// Featured Products Skeleton
-const FeaturedProductsSkeleton = () => (
-  <section className='mb-12'>
-    <div className='h-8 bg-gray-200 rounded w-48 mb-6 animate-pulse'></div>
-    <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6'>
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className='bg-gray-100 rounded-lg p-4 animate-pulse'>
-          <div className='h-48 bg-gray-200 rounded mb-4'></div>
-          <div className='h-4 bg-gray-200 rounded mb-2'></div>
-          <div className='h-4 bg-gray-200 rounded w-3/4'></div>
-        </div>
-      ))}
-    </div>
-  </section>
-)
-
-// Product Slider Component (using ProductsListSlider)
-const ProductSlider = ({
-  products,
-  title,
-}: {
-  products: Product[]
-  title: string
-}) => {
-  if (products.length === 0) return null
-
-  return (
-    <div className='mb-12'>
-      <ProductsListSlider
-        products={products}
-        title={title}
-        showCartBtn={true}
-        viewMode='grid'
-        className='px-0' // Remove extra padding since parent already has padding
-      />
-    </div>
-  )
+export const metadata: Metadata = {
+  title: 'Category',
+  description: 'Single Category Page',
 }
 
-// Product Grid Component (using ProductsList)
-const ProductGrid = ({
-  products,
-  title,
-}: {
-  products: Product[]
-  title: string
-}) => {
-  if (products.length === 0) return null
-
-  return (
-    <div className='mb-12'>
-      <ProductsList
-        products={products}
-        title={title}
-        showCartBtn={true}
-        viewMode='grid'
-        className='px-0' // Remove extra padding since parent already has padding
-      />
-    </div>
-  )
+interface PageProps {
+  params: { categoryId: string }
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
-const SingleCategoryPage = () => {
-  const router = useRouter()
-  const params = useParams()
-  const searchParams = useSearchParams()
-  const categoryId = params.categoryId as string
-  const pageParam = searchParams.get('page')
-
-  const [products, setProducts] = useState<Product[]>([])
-  const [allProducts, setAllProducts] = useState<Product[]>([])
-  const [initialLoading, setInitialLoading] = useState(true)
-  const [paginationLoading, setPaginationLoading] = useState(false)
-  const [categoryInfo, setCategoryInfo] = useState<{
-    name: string
-    description: string
-  }>({
-    name: '',
-    description: '',
-  })
-  const [totalProducts, setTotalProducts] = useState(0)
-
-  // Pagination state
+const SingleCategoryPage = async ({ params, searchParams }: PageProps) => {
+  const { categoryId } = params
+  const pageParam = searchParams.page
+  const currentPage = pageParam
+    ? parseInt(Array.isArray(pageParam) ? pageParam[0] : pageParam)
+    : 1
   const itemsPerPage = 99 // 25 + 25 + 12 + 25 + 12 = 99 per page
-  const currentPage = pageParam ? parseInt(pageParam) : 1
-  const totalPages = Math.ceil(totalProducts / itemsPerPage)
 
-  // Fetch products for the specific category
-  useEffect(() => {
-    const fetchCategoryProducts = async () => {
-      try {
-        setInitialLoading(true)
-
-        if (!categoryId) return
-
-        const response = await getProductsByCategory(categoryId)
-        console.log(response, 'response for category')
-
-        // Define the expected type for category data
-        type CategoryData = {
-          products: Product[]
-          name?: string
-          description?: string
-        }
-
-        // Ensure response.data is always an object with a products property
-        const categoryData: CategoryData = Array.isArray(response.data)
-          ? { products: response.data }
-          : response.data &&
-            typeof response.data === 'object' &&
-            'products' in response.data
-          ? response.data
-          : { products: [] }
-
-        const categoryProducts = categoryData.products || []
-
-        // Ensure categoryProducts is an array
-        const productsArray = Array.isArray(categoryProducts)
-          ? categoryProducts
-          : []
-
-        // Sort products newest to oldest
-        const sortedProducts = productsArray.sort((a, b) => {
-          const dateA = new Date(a.createdAt || 0).getTime()
-          const dateB = new Date(b.createdAt || 0).getTime()
-          return dateB - dateA // Newest first
-        })
-
-        setAllProducts(sortedProducts)
-        setTotalProducts(sortedProducts.length)
-
-        // Set category info from the response data
-        setCategoryInfo({
-          name: categoryData.name || '',
-          description: categoryData.description || 'No description available.',
-        })
-      } catch (error) {
-        console.error('Error fetching category products:', error)
-        // Set empty array on error to prevent issues
-        setAllProducts([])
-        setTotalProducts(0)
-      } finally {
-        setInitialLoading(false)
-      }
-    }
-
-    fetchCategoryProducts()
-  }, [categoryId])
-
-  // Apply pagination when products change
-  useEffect(() => {
-    if (initialLoading) return // Don't process if initial data is still loading
-
-    // Determine if this is a page change
-    const isPageChange = pageParam && parseInt(pageParam) !== currentPage
-    if (isPageChange) {
-      setPaginationLoading(true)
-    }
-
-    // Simulate slight delay for better UX (optional)
-    const timeoutId = setTimeout(() => {
-      try {
-        // Apply pagination to sorted products
-        const start = (currentPage - 1) * itemsPerPage
-        const end = currentPage * itemsPerPage
-        setProducts(allProducts.slice(start, end))
-      } catch (error) {
-        console.error('Error processing products:', error)
-      } finally {
-        setPaginationLoading(false)
-      }
-    }, 150) // Small delay for smoother UX
-
-    return () => clearTimeout(timeoutId)
-  }, [allProducts, currentPage, initialLoading])
-
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    setPaginationLoading(true)
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('page', page.toString())
-    router.push(`?${params.toString()}`)
-  }
-
-  // Generate pagination items
-  const renderPaginationItems = () => {
-    const items = []
-    const maxVisiblePages = 5
-
-    // Always show first page
-    items.push(
-      <PaginationItem key='page-1'>
-        <PaginationLink
-          href='#'
-          onClick={(e) => {
-            e.preventDefault()
-            handlePageChange(1)
-          }}
-          isActive={currentPage === 1}
-          size='default'
-        >
-          1
-        </PaginationLink>
-      </PaginationItem>
-    )
-
-    // Calculate range of pages to show
-    let startPage = Math.max(2, currentPage - Math.floor(maxVisiblePages / 2))
-    let endPage = Math.min(totalPages - 1, startPage + maxVisiblePages - 3)
-
-    // Adjust start if end is maxed out
-    if (endPage === totalPages - 1) {
-      startPage = Math.max(2, endPage - (maxVisiblePages - 3))
-    }
-
-    // Show ellipsis after first page if needed
-    if (startPage > 2) {
-      items.push(
-        <PaginationItem key='ellipsis-1'>
-          <PaginationEllipsis />
-        </PaginationItem>
-      )
-    }
-
-    // Add middle pages
-    for (let i = startPage; i <= endPage; i++) {
-      items.push(
-        <PaginationItem key={`page-${i}`}>
-          <PaginationLink
-            href='#'
-            onClick={(e) => {
-              e.preventDefault()
-              handlePageChange(i)
-            }}
-            isActive={currentPage === i}
-            size='default'
-          >
-            {i}
-          </PaginationLink>
-        </PaginationItem>
-      )
-    }
-
-    // Show ellipsis before last page if needed
-    if (endPage < totalPages - 1 && totalPages > 2) {
-      items.push(
-        <PaginationItem key='ellipsis-2'>
-          <PaginationEllipsis />
-        </PaginationItem>
-      )
-    }
-
-    // Always show last page if totalPages > 1
-    if (totalPages > 1) {
-      items.push(
-        <PaginationItem key={`page-${totalPages}`}>
-          <PaginationLink
-            href='#'
-            onClick={(e) => {
-              e.preventDefault()
-              handlePageChange(totalPages)
-            }}
-            isActive={currentPage === totalPages}
-          >
-            {totalPages}
-          </PaginationLink>
-        </PaginationItem>
-      )
-    }
-
-    return items
-  }
-
+  // Early return if no categoryId
   if (!categoryId) {
     return (
-      <div className='max-w-7xl mx-auto px-4 py-8'>
-        <div className='text-center py-12'>
-          <p className='text-gray-500 text-lg'>Category not found.</p>
-        </div>
-      </div>
+      <SingleCategoryClient
+        categoryId=''
+        initialAllProducts={[]}
+        initialProducts={[]}
+        initialTotalProducts={0}
+        initialCurrentPage={1}
+        totalPages={0}
+        itemsPerPage={itemsPerPage}
+        categoryInfo={{ name: '', description: '' }}
+        error='Category not found.'
+      />
     )
   }
 
-  // Show initial loading state
-  if (initialLoading) {
+  try {
+    const response = await getProductsByCategory(categoryId)
+    console.log(response, 'response for category')
+
+    // Define the expected type for category data
+    type CategoryData = {
+      products: Product[]
+      name?: string
+      description?: string
+    }
+
+    // Ensure response.data is always an object with a products property
+    const categoryData: CategoryData = Array.isArray(response.data)
+      ? { products: response.data }
+      : response.data &&
+        typeof response.data === 'object' &&
+        'products' in response.data
+      ? response.data
+      : { products: [] }
+
+    const categoryProducts = categoryData.products || []
+
+    // Ensure categoryProducts is an array
+    const productsArray = Array.isArray(categoryProducts)
+      ? categoryProducts
+      : []
+
+    // Sort products newest to oldest
+    const sortedProducts = productsArray.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime()
+      const dateB = new Date(b.createdAt || 0).getTime()
+      return dateB - dateA // Newest first
+    })
+
+    const totalProducts = sortedProducts.length
+    const totalPages = Math.ceil(totalProducts / itemsPerPage)
+
+    // Apply pagination to get current page products
+    const start = (currentPage - 1) * itemsPerPage
+    const end = currentPage * itemsPerPage
+    const currentPageProducts = sortedProducts.slice(start, end)
+
+    // Set category info from the response data
+    const categoryInfo = {
+      name: categoryData.name || '',
+      description: categoryData.description || 'No description available.',
+    }
+
     return (
-      <div className='max-w-7xl mx-auto px-4 py-8'>
-        <div className='mb-8'>
-          <div className='h-9 bg-gray-200 rounded w-48 mb-2 animate-pulse'></div>
-          <div className='h-5 bg-gray-200 rounded w-96 animate-pulse'></div>
-        </div>
+      <SingleCategoryClient
+        categoryId={categoryId}
+        initialAllProducts={sortedProducts}
+        initialProducts={currentPageProducts}
+        initialTotalProducts={totalProducts}
+        initialCurrentPage={currentPage}
+        totalPages={totalPages}
+        itemsPerPage={itemsPerPage}
+        categoryInfo={categoryInfo}
+      />
+    )
+  } catch (error) {
+    console.error('Error fetching category products:', error)
 
-        <FeaturedProductsSkeleton />
-
-        <div className='space-y-12'>
-          {[...Array(4)].map((_, i) => (
-            <div key={i}>
-              <div className='h-8 bg-gray-200 rounded w-48 mb-6 animate-pulse'></div>
-              <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6'>
-                {[...Array(10)].map((_, j) => (
-                  <div
-                    key={j}
-                    className='bg-gray-100 rounded-lg p-4 animate-pulse'
-                  >
-                    <div className='h-48 bg-gray-200 rounded mb-4'></div>
-                    <div className='h-4 bg-gray-200 rounded mb-2'></div>
-                    <div className='h-4 bg-gray-200 rounded w-3/4'></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+    // Return client component with error state
+    return (
+      <SingleCategoryClient
+        categoryId={categoryId}
+        initialAllProducts={[]}
+        initialProducts={[]}
+        initialTotalProducts={0}
+        initialCurrentPage={1}
+        totalPages={0}
+        itemsPerPage={itemsPerPage}
+        categoryInfo={{ name: '', description: '' }}
+        error='Failed to load category products'
+      />
     )
   }
-
-  // Split products into sections following the pattern
-  const featuredProducts = allProducts
-    .filter((p) => p.tags?.includes('featured') || false)
-    .slice(0, 25)
-  const firstSliderProducts = products.slice(0, 25) // First Slider: 25 products
-  const secondSliderProducts = products.slice(25, 50) // Second Slider: 25 products
-  const firstGridProducts = products.slice(50, 62) // First Grid: 12 products
-  const thirdSliderProducts = products.slice(62, 87) // Third Slider: 25 products
-  const secondGridProducts = products.slice(87, 99) // Second Grid: 12 products
-
-  return (
-    <div className='max-w-7xl mx-auto mt-10 px-4 py-8'>
-      <div className='mb-8'>
-        <h1 className='text-3xl font-bold text-gray-900'>
-          {categoryInfo.name || 'Category'}
-        </h1>
-        <p className='text-gray-600 mt-2'>
-          {categoryInfo.description || 'No description available.'}
-        </p>
-      </div>
-
-      {/* Featured Products Section */}
-      {featuredProducts.length > 0 && (
-        <section className='mb-12'>
-          <h2 className='text-2xl font-semibold mb-6'>Featured Products</h2>
-          <FeaturedProducts products={featuredProducts} />
-        </section>
-      )}
-
-      {/* Main Content Area */}
-      <div className='relative'>
-        {/* Pagination Loading Overlay */}
-        {paginationLoading && (
-          <div className='absolute inset-0 bg-white/70 z-10 flex items-center justify-center'>
-            <div className='text-center'>
-              <div className='loader mx-auto mb-2'></div>
-              <p className='text-gray-500 text-sm'>Loading page...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Products Content */}
-        <div
-          className={`transition-opacity duration-200 ${
-            paginationLoading ? 'opacity-30' : 'opacity-100'
-          }`}
-        >
-          {/* First Slider - 25 products */}
-          <ProductSlider
-            products={firstSliderProducts}
-            title='Latest products'
-          />
-
-          {/* First BgCardsSlider - Positioned after the first slider */}
-          <div className='mb-12'>
-            <BgCardsSlider />
-          </div>
-
-          {/* Second Slider - 25 products */}
-          <ProductSlider
-            products={secondSliderProducts}
-            title='Trending Products'
-          />
-
-          {/* First Grid Block - 12 products */}
-          <ProductGrid
-            products={firstGridProducts}
-            title='Featured Collection'
-          />
-
-          {/* Second BgCardsSlider - Only show if we have enough products for a good layout */}
-          {products.length >= 75 && (
-            <div className='mb-12'>
-              <BgCardsSlider />
-            </div>
-          )}
-
-          {/* Third Slider - 25 products */}
-          <ProductSlider
-            products={thirdSliderProducts}
-            title='You Might Like'
-          />
-
-          {/* Second Grid Block - 12 products */}
-          <ProductGrid products={secondGridProducts} title='More Products' />
-
-          {/* No products message */}
-          {products.length === 0 && !paginationLoading && (
-            <div className='text-center py-12'>
-              <p className='text-gray-500 text-lg'>
-                No products found in this category.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div
-            className={`mt-8 transition-opacity duration-200 ${
-              paginationLoading
-                ? 'opacity-50 pointer-events-none'
-                : 'opacity-100'
-            }`}
-          >
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href='#'
-                    onClick={(e) => {
-                      e.preventDefault()
-                      if (currentPage > 1) {
-                        handlePageChange(currentPage - 1)
-                      }
-                    }}
-                    className={
-                      currentPage === 1 ? 'pointer-events-none opacity-50' : ''
-                    }
-                    size='default'
-                  />
-                </PaginationItem>
-
-                {renderPaginationItems()}
-
-                <PaginationItem>
-                  <PaginationNext
-                    href='#'
-                    onClick={(e) => {
-                      e.preventDefault()
-                      if (currentPage < totalPages) {
-                        handlePageChange(currentPage + 1)
-                      }
-                    }}
-                    className={
-                      currentPage === totalPages
-                        ? 'pointer-events-none opacity-50'
-                        : ''
-                    }
-                    size='default'
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        )}
-      </div>
-    </div>
-  )
 }
 
 export default SingleCategoryPage

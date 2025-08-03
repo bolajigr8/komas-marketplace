@@ -351,7 +351,7 @@ import {
 
 type PropsType = {
   productId: string
-  variantId?: string // Added optional variantId
+  variantId?: string // Optional variant ID for product variants
   maxQuantity?: number
   initialQuantity: number
   onQuantityChange?: (quantity: number) => void
@@ -372,7 +372,7 @@ const sizeConfig: Record<
 
 const CartCounter = ({
   productId,
-  variantId, // Accept variantId prop
+  variantId, // New prop for variant support
   initialQuantity,
   maxQuantity = 99,
   onQuantityChange,
@@ -431,19 +431,19 @@ const CartCounter = ({
         setQuantity(newQuantity)
         onQuantityChange?.(newQuantity)
 
-        // Update Redux store first - pass variantId for proper identification
+        // Update Redux store first
         if (newQuantity === 0) {
           dispatch(
             cartActions.removeFromCart({
               productId,
-              variantId, // Include variantId for proper variant identification
+              variantId, // Pass variantId to Redux action
             })
           )
         } else {
           dispatch(
             cartActions.updateCartQuantity({
               productId,
-              variantId, // Include variantId for proper variant identification
+              variantId, // Pass variantId to Redux action
               quantity: newQuantity,
             })
           )
@@ -459,18 +459,18 @@ const CartCounter = ({
           let response
 
           if (newQuantity === 0) {
-            // Remove the entire product/variant from cart
+            // Remove the entire product from cart
             response = await removeProductFromCart({
               productId,
-              variantId, // Pass variantId to server action
               quantity: oldQuantity, // Remove all remaining quantity
+              variantId, // Include variantId in server request
             })
           } else if (oldQuantity === 0) {
             // Adding new item
             response = await addProductToCart({
               productId,
-              variantId, // Pass variantId to server action
               quantity: newQuantity,
+              variantId, // Include variantId in server request
             })
           } else {
             // Handle quantity updates properly
@@ -480,15 +480,15 @@ const CartCounter = ({
               // Increase quantity
               response = await addProductToCart({
                 productId,
-                variantId, // Pass variantId to server action
                 quantity: quantityDifference,
+                variantId, // Include variantId in server request
               })
             } else {
               // Decrease quantity
               response = await removeProductFromCart({
                 productId,
-                variantId, // Pass variantId to server action
                 quantity: Math.abs(quantityDifference),
+                variantId, // Include variantId in server request
               })
             }
           }
@@ -519,19 +519,19 @@ const CartCounter = ({
         setQuantity(oldQuantity)
         onQuantityChange?.(oldQuantity)
 
-        // Revert Redux state - include variantId for proper identification
+        // Revert Redux state
         if (oldQuantity === 0) {
           dispatch(
             cartActions.removeFromCart({
               productId,
-              variantId,
+              variantId, // Pass variantId to Redux action
             })
           )
         } else {
           dispatch(
             cartActions.updateCartQuantity({
               productId,
-              variantId,
+              variantId, // Pass variantId to Redux action
               quantity: oldQuantity,
             })
           )

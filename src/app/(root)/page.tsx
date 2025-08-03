@@ -49,7 +49,7 @@ const DisplayCategoriesAndProducts = async ({
   category,
 }: DisplayCategoriesAndProductsProps) => {
   const [products, categories] = await Promise.all([
-    getProducts({ page, perPage: 1000 }),
+    getProducts({ page: 100, perPage: 10 }),
     fetchCategories(),
   ])
 
@@ -97,7 +97,11 @@ const DisplayCategoriesAndProducts = async ({
     (product) => product.isApproved && !product.isDeleted && product.isLive
   )
 
-  const sortedProducts = [...filteredProducts].sort(
+  // const sortedProducts = [...filteredProducts].sort(
+  //   (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  // )
+
+  const sortedProducts = [...(products.data?.products || [])].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
 
@@ -118,6 +122,8 @@ const DisplayCategoriesAndProducts = async ({
         selectedCategory={category}
         baseRoute='/category/'
       />
+
+      {/* Here */}
 
       <ProductsListSlider
         products={latest10ProductsFirst}
