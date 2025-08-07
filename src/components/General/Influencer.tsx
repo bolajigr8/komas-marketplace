@@ -69,7 +69,7 @@ const InfluencerClient = () => {
                   />
 
                   <StaggeredText
-                    text='KOMAS500 WHOLESALE CUSTOMER'
+                    text='KOMAS500 WHOLESALE COSMETICS'
                     el='h2'
                     className='text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-bold text-white/90 tracking-wider'
                   />
@@ -79,7 +79,7 @@ const InfluencerClient = () => {
                 <div className='mb-10 lg:mb-6'>
                   <p className='text-lg sm:text-xl lg:text-xl text-white/80 leading-relaxed'>
                     Join our exclusive influencer program and start earning by
-                    promoting premium customer content
+                    promoting premium cosmetics content
                   </p>
                 </div>
 
