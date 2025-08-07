@@ -44,7 +44,7 @@ const ProductsList = ({
   // Updated grid classes with proper sizing for more balanced cards
   const gridClasses =
     viewMode === 'grid'
-      ? 'grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-5 auto-rows-fr'
+      ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-5 auto-rows-fr'
       : 'space-y-6'
 
   // Alternative approach using auto-fit with balanced minmax values
