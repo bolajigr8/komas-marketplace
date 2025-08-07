@@ -6,7 +6,9 @@ type PropsType = {
 
 const Loader = ({ className }: PropsType) => {
   return (
-    <div className={`loader ${className}`} />
+    <div className='root-loading-container'>
+      <div className={`loader ${className}`} />
+    </div>
   )
 }
 

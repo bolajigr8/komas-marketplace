@@ -6,6 +6,8 @@ import NavLink from '../General/NavLink'
 import { footerHelpLinks, footerLinks, socialLinks } from '@/constants'
 
 const Footer = () => {
+  const currentYear = new Date().getFullYear()
+
   return (
     <footer className='w-full bg-white'>
       <div className='flex flex-col gap-4 w-full max-w-6xl mx-auto p-4 py-16'>
@@ -29,7 +31,7 @@ const Footer = () => {
               <li className='flex items-center gap-1'>
                 <MdOutlineEmail className='text-green-500' />
                 <span className='font-medium'>Email: </span>
-                <span>soft6060mail</span>
+                <span>support@komas500.com</span>
               </li>
             </ul>
           </div>
@@ -55,7 +57,7 @@ const Footer = () => {
           </div>
         </div>
         <div className='flex flex-col-reverse md:flex-row items-center justify-between gap-4'>
-          <p>© 2023, All rights reserved</p>
+          <p>© {currentYear}, All rights reserved</p>
           <div className='flex items-center gap-4'>
             <p className='text-lg font-medium'>Join us</p>
             <ul className='flex items-center gap-2'>

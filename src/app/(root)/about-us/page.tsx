@@ -4,7 +4,7 @@ import React from 'react'
 
 export default function AboutUs() {
   return (
-    <div className='min-h-screen mt-[5rem] bg-white'>
+    <div className='min-h-screen mt-[4.5rem] bg-white'>
       {/* Header Section */}
 
       <header className='bg-gray-100 mt-[5rem] py-[8rem] px-4 relative overflow-hidden'>
@@ -19,7 +19,7 @@ export default function AboutUs() {
           <h1 className='text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight relative z-10'>
             About Komas500 Global
           </h1>
-          <p className='text-lg md:text-xl text-black max-w-3xl mx-auto font-semibold leading-relaxed relative z-10'>
+          <p className='text-base md:text-lg text-black max-w-3xl mx-auto font-semibold leading-relaxed relative z-10'>
             We believe shopping should be more than a routine — it should be
             exciting, affordable, and accessible to everyone. That's why we
             created Komas500: a one-stop destination for high-quality cosmetics
@@ -37,7 +37,7 @@ export default function AboutUs() {
           </h2>
           <div className='grid lg:grid-cols-2 gap-16 items-center'>
             <div className='space-y-6'>
-              <p className='text-lg text-gray-700 leading-relaxed'>
+              <p className='text-base text-gray-700 leading-relaxed'>
                 Komas500 is built on a clear vision — to transform how beauty is
                 experienced across Nigeria and beyond. Whether you're a final
                 consumer or a retailer, we make it possible to shop premium
@@ -55,7 +55,7 @@ export default function AboutUs() {
                 ].map((feature, index) => (
                   <div key={index} className='flex items-start space-x-4'>
                     <div className='w-2 h-2 bg-[#3BB77E] rounded-full mt-3 flex-shrink-0'></div>
-                    <p className='text-lg text-gray-700'>{feature}</p>
+                    <p className='text-base text-gray-700'>{feature}</p>
                   </div>
                 ))}
               </div>
@@ -65,7 +65,7 @@ export default function AboutUs() {
               <h3 className='text-2xl font-bold text-gray-900 mb-6'>
                 Transforming Beauty Shopping
               </h3>
-              <p className='text-lg text-gray-700 leading-relaxed'>
+              <p className='text-case text-gray-700 leading-relaxed'>
                 From makeup to skincare to accessories, we're creating an
                 ecosystem where premium beauty meets unbeatable affordability —
                 making quality accessible to everyone, everywhere.
@@ -82,7 +82,7 @@ export default function AboutUs() {
           <div className='grid md:grid-cols-2 gap-12'>
             <div className='bg-white p-10 rounded-2xl shadow-lg border-l-4 border-[#3BB77E] hover:shadow-xl transition-shadow duration-300'>
               <h3 className='text-3xl font-bold text-[#3BB77E] mb-6'>Vision</h3>
-              <p className='text-lg text-gray-700 leading-relaxed'>
+              <p className='text-base text-gray-700 leading-relaxed'>
                 To become Africa's most trusted and accessible beauty
                 marketplace — where affordability, convenience, and quality
                 meet.
@@ -92,7 +92,7 @@ export default function AboutUs() {
               <h3 className='text-3xl font-bold text-[#3BB77E] mb-6'>
                 Mission
               </h3>
-              <p className='text-lg text-gray-700 leading-relaxed'>
+              <p className='text-base text-gray-700 leading-relaxed'>
                 We exist to make beauty shopping not just easy, but fun —
                 combining unbeatable prices with an engaging and reliable
                 experience that excites our customers every time they shop.

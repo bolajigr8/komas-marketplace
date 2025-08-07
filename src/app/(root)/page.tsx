@@ -16,7 +16,6 @@ import SearchResults from '@/components/HomePage/SearchResults'
 // import { InstallPromptToast } from "./client-components";
 
 // Actions & Utils
-
 import { getProducts } from '@/lib/server-actions/product'
 import { getCategories as fetchCategories } from '@/lib/server-actions/category'
 import { divideProductsByCategory } from '@/lib/utils'
@@ -49,7 +48,7 @@ const DisplayCategoriesAndProducts = async ({
   category,
 }: DisplayCategoriesAndProductsProps) => {
   const [products, categories] = await Promise.all([
-    getProducts({ page: 100, perPage: 10 }),
+    getProducts({ page, perPage: 1000 }),
     fetchCategories(),
   ])
 
@@ -93,20 +92,16 @@ const DisplayCategoriesAndProducts = async ({
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
 
-  const filteredProducts = (products.data?.products || []).filter(
-    (product) => product.isApproved && !product.isDeleted && product.isLive
-  )
-
-  // const sortedProducts = [...filteredProducts].sort(
-  //   (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  // )
-
-  const sortedProducts = [...(products.data?.products || [])].sort(
+  // Get products directly from server and sort by latest (creation date)
+  const allProducts = [...(products.data?.products || [])].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
 
-  const latest10ProductsFirst = sortedProducts.slice(0, 10)
-  const latest10ProductsSecond = sortedProducts.slice(10, 20)
+  // Create different product slices for each section (25 products each for sliders)
+  const featuredProducts = allProducts.slice(0, 25) // First 25 latest products
+  const dealsProducts = allProducts.slice(25, 50) // Next 25 latest products
+  const likeProducts = allProducts.slice(50, 60) // Next 10 latest products (keeping original count)
+  const popularProducts = allProducts.slice(60, 85) // Next 25 latest products
 
   // console.log(categories, 'categories')
 
@@ -123,21 +118,20 @@ const DisplayCategoriesAndProducts = async ({
         baseRoute='/category/'
       />
 
-      {/* Here */}
-
       <ProductsListSlider
-        products={latest10ProductsFirst}
+        products={featuredProducts}
         showCartBtn
         title='Featured Products'
       />
+
       <ProductsListSlider
-        products={latest10ProductsFirst}
+        products={dealsProducts}
         showCartBtn
         title='Deals For You'
       />
 
       <ProductsList
-        products={latest10ProductsFirst}
+        products={likeProducts}
         showCartBtn
         title='We Think You Will Like'
       />
@@ -162,7 +156,7 @@ const DisplayCategoriesAndProducts = async ({
 
       <ProductsList
         title='Popular Products'
-        products={latest10ProductsFirst}
+        products={popularProducts.slice(0, 10)} // Show first 10 of the 25 popular products
         showCartBtn
       />
 

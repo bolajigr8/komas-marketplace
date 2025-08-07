@@ -41,9 +41,16 @@ const ProductsList = ({
   // cardClass = "",
   viewMode = 'grid',
 }: PropsType) => {
+  // Updated grid classes with proper sizing for more balanced cards
   const gridClasses =
     viewMode === 'grid'
-      ? 'grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6'
+      ? 'grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-5 auto-rows-fr'
+      : 'space-y-6'
+
+  // Alternative approach using auto-fit with balanced minmax values
+  const alternativeGridClasses =
+    viewMode === 'grid'
+      ? 'grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4 sm:gap-5 auto-rows-fr'
       : 'space-y-6'
 
   // console.log('products', products)
@@ -51,7 +58,7 @@ const ProductsList = ({
 
   return (
     <section className={`w-full px-4 ${className}`}>
-      <div className='w-full'>
+      <div className='w-full max-w-screen-2xl mx-auto'>
         <h2 className='text-xl font-semibold ml-2 mb-4'>{title}</h2>
         {products.length ? (
           <div className={gridClasses}>
@@ -65,13 +72,13 @@ const ProductsList = ({
                 className={`${
                   viewMode === 'list'
                     ? 'flex flex-col md:flex-row gap-4'
-                    : 'flex flex-col'
-                }`}
+                    : 'flex flex-col h-full'
+                } w-full`}
               />
             ))}
           </div>
         ) : (
-          <div className='w-[calc(100%-16px)] h-[200px] mx-auto flex items-center justify-center rounded-md bg-gray-100'>
+          <div className='w-full h-[200px] mx-auto flex items-center justify-center rounded-md bg-gray-100'>
             <p className='font-medium text-center'>No products here</p>
           </div>
         )}

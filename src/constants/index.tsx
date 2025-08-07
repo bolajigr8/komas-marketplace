@@ -14,13 +14,17 @@ export const headerNavLinks = [
   { route: '/', label: 'Home', icon: <LuHome size={20} /> },
   { route: '/category', label: 'Hot Deals', icon: <PiFireLight size={20} /> },
   {
-    route: '/aboutUs',
+    route: '/about-us',
     label: 'About Us',
     icon: <LiaInfoCircleSolid size={20} />,
   },
-  { route: '/help', label: 'Help', icon: <LiaQuestionCircleSolid size={20} /> },
+  // {
+  //   route: 'https://tawk.to/chat/67d02a1e6a75d6190a1ec9fa/1imckvr0s',
+  //   label: 'Help',
+  //   icon: <LiaQuestionCircleSolid size={20} />,
+  // },
   {
-    route: '/supportCenter',
+    route: 'https://tawk.to/chat/67d02a1e6a75d6190a1ec9fa/1imckvr0s',
     label: 'Support Center',
     icon: <IoCallOutline size={20} />,
   },
@@ -55,12 +59,8 @@ export const footerLinks = [
 
 export const footerHelpLinks = [
   {
-    label: 'Payments',
-    route: '/account/payment',
-  },
-  {
     label: 'Refund',
-    route: '/account/returns',
+    route: '/refund',
   },
   {
     label: 'Checkout',
@@ -71,8 +71,8 @@ export const footerHelpLinks = [
     route: '/account/orders',
   },
   {
-    label: 'Q&A',
-    route: '/',
+    route: 'https://tawk.to/chat/67d02a1e6a75d6190a1ec9fa/1imckvr0s',
+    label: 'Support Center',
   },
 ]
 

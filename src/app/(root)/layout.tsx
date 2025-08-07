@@ -1,4 +1,3 @@
-// import CartSyncer from '@/components/CartPage/CartSync'
 import CartSyncer from '@/components/CartPage/CartSync'
 import CheckoutButton from '@/components/CheckoutPage/CheckoutButton'
 import Footer from '@/components/Footer/Footer'

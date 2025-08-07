@@ -30,6 +30,15 @@ const SignUp = ({ searchParams }: PropsType) => {
       <div className='w-full md:w-1/2 flex flex-col gap-4'>
         <p className='text-2xl text-center font-bold mb-2'>Create Account</p>
         <AuthForm action='register' callbackUrl={callbackUrl} />
+        <p className='text-sm text-gray-600 text-center'>
+          By creating an account, you agree to Komas500{' '}
+          <Link
+            href='/privacy-policy'
+            className='text-green-500 cursor-pointer hover:underline'
+          >
+            Conditions of use and Privacy notice
+          </Link>
+        </p>
         <p>
           Already have an account?{' '}
           <Link

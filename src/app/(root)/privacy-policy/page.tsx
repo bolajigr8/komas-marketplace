@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 const PrivacyPolicy: React.FC = () => {
   return (
-    <div className=''>
+    <div className='mt-[4.5rem]'>
       <PrivacyPolicyPage />
     </div>
   )
