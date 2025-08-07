@@ -22,7 +22,7 @@ const OrderHistory = async () => {
     return dateB - dateA // Descending order (newest first)
   })
 
-  console.log('allOrders', sortedOrders)
+  // console.log('allOrders', sortedOrders)
 
   return (
     <main className='flex-1 bg-white py-8 px-4 md:px-6'>

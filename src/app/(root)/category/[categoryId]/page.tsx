@@ -589,7 +589,7 @@ const SingleCategoryPage = async ({ params, searchParams }: PageProps) => {
 
   try {
     const response = await getProductsByCategory(categoryId)
-    console.log(response, 'response for category')
+    // console.log(response, 'response for category')
 
     // Define the expected type for category data
     type CategoryData = {

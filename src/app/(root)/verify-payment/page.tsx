@@ -60,7 +60,7 @@ const VerifyPaymentContent = () => {
 
       return current !== undefined && current !== null ? current : defaultValue
     } catch (error) {
-      console.warn(`SafeGet error for path "${path}":`, error)
+      // console.warn(`SafeGet error for path "${path}":`, error)
       return defaultValue
     }
   }
@@ -86,12 +86,12 @@ const VerifyPaymentContent = () => {
     for (const path of possiblePaths) {
       const value = safeGet(orderData, path)
       if (value && typeof value === 'string' && value.trim()) {
-        console.log(`Found pickup station ID from path "${path}":`, value)
+        // console.log(`Found pickup station ID from path "${path}":`, value)
         return value.trim()
       }
     }
 
-    console.warn('No pickup station ID found, using fallback:', fallbackId)
+    // console.warn('No pickup station ID found, using fallback:', fallbackId)
     return fallbackId
   }
 
@@ -109,7 +109,7 @@ const VerifyPaymentContent = () => {
     for (const path of possiblePaths) {
       const value = safeGet(orderData, path)
       if (value && typeof value === 'string' && value.trim()) {
-        console.log(`Found delivery method ID from path "${path}":`, value)
+        // console.log(`Found delivery method ID from path "${path}":`, value)
         return value.trim()
       }
     }
@@ -146,252 +146,249 @@ const VerifyPaymentContent = () => {
           return value.trim()
         }
       } catch (error) {
-        console.warn('Error getting vendor ID from source:', error)
+        // console.warn('Error getting vendor ID from source:', error)
       }
     }
 
-    console.warn('No vendor ID found, using fallback:', fallbackId)
+    // console.warn('No vendor ID found, using fallback:', fallbackId)
     return fallbackId
   }
 
   // Updated createOrder function with better error handling
   // Debug function to log all possible ID paths
   const debugLogAllIds = (orderData: StoredOrderData) => {
-    console.log('=== DEBUG: LOGGING ALL POSSIBLE IDS ===')
+    // console.log('=== DEBUG: LOGGING ALL POSSIBLE IDS ===')
 
     // Log the entire order data structure first
-    console.log('Full orderData keys:', Object.keys(orderData || {}))
+    // console.log('Full orderData keys:', Object.keys(orderData || {}))
 
     // Check session data
-    console.log('--- SESSION DATA ---')
-    console.log('session:', orderData?.session)
-    console.log('session.userId:', orderData?.session?.userId)
-    console.log('session.userRoleType:', orderData?.session?.userRoleType)
+    // console.log('--- SESSION DATA ---')
+    // console.log('session:', orderData?.session)
+    // console.log('session.userId:', orderData?.session?.userId)
+    // console.log('session.userRoleType:', orderData?.session?.userRoleType)
 
     // Check delivery details
-    console.log('--- DELIVERY DETAILS ---')
-    console.log('deliveryDetails:', orderData?.deliveryDetails)
-    console.log(
-      'deliveryDetails keys:',
-      Object.keys(orderData?.deliveryDetails || {})
-    )
+    // console.log('--- DELIVERY DETAILS ---')
+    // console.log('deliveryDetails:', orderData?.deliveryDetails)
+    // console.log(
+    //   'deliveryDetails keys:',
+    //   Object.keys(orderData?.deliveryDetails || {})
+    // )
 
-    // Check delivery method
-    console.log('--- DELIVERY METHOD ---')
-    console.log(
-      'deliveryDetails.deliveryMethod:',
-      orderData?.deliveryDetails?.deliveryMethod
-    )
-    console.log(
-      'deliveryDetails.deliveryMethod keys:',
-      Object.keys(orderData?.deliveryDetails?.deliveryMethod || {})
-    )
-    console.log(
-      'deliveryDetails.deliveryMethod._id:',
-      orderData?.deliveryDetails?.deliveryMethod?._id
-    )
-    console.log(
-      'deliveryDetails.deliveryMethod.id:',
-      orderData?.deliveryDetails?.deliveryMethod?.id
-    )
-    console.log(
-      'deliveryDetails.deliveryMethod.category:',
-      orderData?.deliveryDetails?.deliveryMethod?.category
-    )
+    // // Check delivery method
+    // console.log('--- DELIVERY METHOD ---')
+    // console.log(
+    //   'deliveryDetails.deliveryMethod:',
+    //   orderData?.deliveryDetails?.deliveryMethod
+    // )
+    // console.log(
+    //   'deliveryDetails.deliveryMethod keys:',
+    //   Object.keys(orderData?.deliveryDetails?.deliveryMethod || {})
+    // )
+    // console.log(
+    //   'deliveryDetails.deliveryMethod._id:',
+    //   orderData?.deliveryDetails?.deliveryMethod?._id
+    // )
+    // console.log(
+    //   'deliveryDetails.deliveryMethod.id:',
+    //   orderData?.deliveryDetails?.deliveryMethod?.id
+    // )
+    // console.log(
+    //   'deliveryDetails.deliveryMethod.category:',
+    //   orderData?.deliveryDetails?.deliveryMethod?.category
+    // )
 
     // Check pickup location
-    console.log('--- PICKUP LOCATION ---')
-    console.log(
-      'deliveryDetails.deliveryMethod.pickupLocation:',
-      orderData?.deliveryDetails?.deliveryMethod?.pickupLocation
-    )
-    console.log(
-      'deliveryDetails.deliveryMethod.pickupLocation keys:',
-      Object.keys(
-        orderData?.deliveryDetails?.deliveryMethod?.pickupLocation || {}
-      )
-    )
-    console.log(
-      'deliveryDetails.deliveryMethod.pickupLocation._id:',
-      orderData?.deliveryDetails?.deliveryMethod?.pickupLocation?._id
-    )
-    console.log(
-      'deliveryDetails.deliveryMethod.pickupLocation.id:',
-      orderData?.deliveryDetails?.deliveryMethod?.pickupLocation?.id
-    )
+    // console.log('--- PICKUP LOCATION ---')
+    // console.log(
+    //   'deliveryDetails.deliveryMethod.pickupLocation:',
+    //   orderData?.deliveryDetails?.deliveryMethod?.pickupLocation
+    // )
+    // console.log(
+    //   'deliveryDetails.deliveryMethod.pickupLocation keys:',
+    //   Object.keys(
+    //     orderData?.deliveryDetails?.deliveryMethod?.pickupLocation || {}
+    //   )
+    // )
+    // console.log(
+    //   'deliveryDetails.deliveryMethod.pickupLocation._id:',
+    //   orderData?.deliveryDetails?.deliveryMethod?.pickupLocation?._id
+    // )
+    // console.log(
+    //   'deliveryDetails.deliveryMethod.pickupLocation.id:',
+    //   orderData?.deliveryDetails?.deliveryMethod?.pickupLocation?.id
+    // )
 
     // Check method details
-    console.log('--- METHOD DETAILS ---')
-    console.log('methodDetails:', orderData?.methodDetails)
-    console.log(
-      'methodDetails keys:',
-      Object.keys(orderData?.methodDetails || {})
-    )
-    console.log('methodDetails._id:', orderData?.methodDetails?._id)
-    console.log('methodDetails.id:', orderData?.methodDetails?.id)
-    console.log('methodDetails.fee:', orderData?.methodDetails?.fee)
+    // console.log('--- METHOD DETAILS ---')
+    // console.log('methodDetails:', orderData?.methodDetails)
+    // console.log(
+    //   'methodDetails keys:',
+    //   Object.keys(orderData?.methodDetails || {})
+    // )
+    // console.log('methodDetails._id:', orderData?.methodDetails?._id)
+    // console.log('methodDetails.id:', orderData?.methodDetails?.id)
+    // console.log('methodDetails.fee:', orderData?.methodDetails?.fee)
 
     // Check method details pickup location
-    console.log('--- METHOD DETAILS PICKUP LOCATION ---')
-    console.log(
-      'methodDetails.pickupLocation:',
-      orderData?.methodDetails?.pickupLocation
-    )
-    console.log(
-      'methodDetails.pickupLocation keys:',
-      Object.keys(orderData?.methodDetails?.pickupLocation || {})
-    )
-    console.log(
-      'methodDetails.pickupLocation._id:',
-      orderData?.methodDetails?.pickupLocation?._id
-    )
-    console.log(
-      'methodDetails.pickupLocation.id:',
-      orderData?.methodDetails?.pickupLocation?.id
-    )
+    // console.log('--- METHOD DETAILS PICKUP LOCATION ---')
+    // console.log(
+    //   'methodDetails.pickupLocation:',
+    //   orderData?.methodDetails?.pickupLocation
+    // )
+    // console.log(
+    //   'methodDetails.pickupLocation keys:',
+    //   Object.keys(orderData?.methodDetails?.pickupLocation || {})
+    // )
+    // console.log(
+    //   'methodDetails.pickupLocation._id:',
+    //   orderData?.methodDetails?.pickupLocation?._id
+    // )
+    // console.log(
+    //   'methodDetails.pickupLocation.id:',
+    //   orderData?.methodDetails?.pickupLocation?.id
+    // )
 
     // Check delivery address
-    console.log('--- DELIVERY ADDRESS ---')
-    console.log(
-      'deliveryDetails.deliveryAddress:',
-      orderData?.deliveryDetails?.deliveryAddress
-    )
-    console.log(
-      'deliveryDetails.deliveryAddress keys:',
-      Object.keys(orderData?.deliveryDetails?.deliveryAddress || {})
-    )
-    console.log(
-      'deliveryDetails.deliveryAddress.addressString:',
-      orderData?.deliveryDetails?.deliveryAddress?.addressString
-    )
-    console.log(
-      'deliveryDetails.deliveryAddress.postCode:',
-      orderData?.deliveryDetails?.deliveryAddress?.postCode
-    )
-    console.log(
-      'deliveryDetails.deliveryAddress.geolocation:',
-      orderData?.deliveryDetails?.deliveryAddress?.geolocation
-    )
+    // console.log('--- DELIVERY ADDRESS ---')
+    // console.log(
+    //   'deliveryDetails.deliveryAddress:',
+    //   orderData?.deliveryDetails?.deliveryAddress
+    // )
+    // console.log(
+    //   'deliveryDetails.deliveryAddress keys:',
+    //   Object.keys(orderData?.deliveryDetails?.deliveryAddress || {})
+    // )
+    // console.log(
+    //   'deliveryDetails.deliveryAddress.addressString:',
+    //   orderData?.deliveryDetails?.deliveryAddress?.addressString
+    // )
+    // console.log(
+    //   'deliveryDetails.deliveryAddress.postCode:',
+    //   orderData?.deliveryDetails?.deliveryAddress?.postCode
+    // )
+    // console.log(
+    //   'deliveryDetails.deliveryAddress.geolocation:',
+    //   orderData?.deliveryDetails?.deliveryAddress?.geolocation
+    // )
 
     // Check cart products
-    console.log('--- CART PRODUCTS ---')
-    console.log('cartProducts:', orderData?.cartProducts)
-    console.log('cartProducts length:', orderData?.cartProducts?.length)
+    // console.log('--- CART PRODUCTS ---')
+    // console.log('cartProducts:', orderData?.cartProducts)
+    // console.log('cartProducts length:', orderData?.cartProducts?.length)
 
     if (orderData?.cartProducts && Array.isArray(orderData.cartProducts)) {
       orderData.cartProducts.forEach((item, index) => {
-        console.log(`--- PRODUCT ${index + 1} ---`)
-        console.log(`cartProducts[${index}]:`, item)
-        console.log(`cartProducts[${index}] keys:`, Object.keys(item || {}))
-        console.log(`cartProducts[${index}].product:`, item?.product)
-        console.log(
-          `cartProducts[${index}].product keys:`,
-          Object.keys(item?.product || {})
-        )
-
+        // console.log(`--- PRODUCT ${index + 1} ---`)
+        // console.log(`cartProducts[${index}]:`, item)
+        // console.log(`cartProducts[${index}] keys:`, Object.keys(item || {}))
+        // console.log(`cartProducts[${index}].product:`, item?.product)
+        // console.log(
+        //   `cartProducts[${index}].product keys:`,
+        //   Object.keys(item?.product || {})
+        // )
         // Product IDs
-        console.log(`cartProducts[${index}].product._id:`, item?.product?._id)
-        console.log(`cartProducts[${index}].product.id:`, item?.product?.id)
-        console.log(
-          `cartProducts[${index}].product.productId:`,
-          item?.product?.productId
-        )
-        console.log(
-          `cartProducts[${index}].product.productID:`,
-          item?.product?.productID
-        )
-        console.log(`cartProducts[${index}].productId:`, item?.productId)
-        console.log(`cartProducts[${index}].productID:`, item?.productID)
-        console.log(`cartProducts[${index}].id:`, item?.id)
-        console.log(`cartProducts[${index}]._id:`, item?._id)
-
+        // console.log(`cartProducts[${index}].product._id:`, item?.product?._id)
+        // console.log(`cartProducts[${index}].product.id:`, item?.product?.id)
+        // console.log(
+        //   `cartProducts[${index}].product.productId:`,
+        //   item?.product?.productId
+        // )
+        // console.log(
+        //   `cartProducts[${index}].product.productID:`,
+        //   item?.product?.productID
+        // )
+        // console.log(`cartProducts[${index}].productId:`, item?.productId)
+        // console.log(`cartProducts[${index}].productID:`, item?.productID)
+        // console.log(`cartProducts[${index}].id:`, item?.id)
+        // console.log(`cartProducts[${index}]._id:`, item?._id)
         // Vendor IDs
-        console.log(
-          `cartProducts[${index}].product.vendor:`,
-          item?.product?.vendor
-        )
-        console.log(
-          `cartProducts[${index}].product.vendor keys:`,
-          Object.keys(item?.product?.vendor || {})
-        )
-        console.log(
-          `cartProducts[${index}].product.vendor._id:`,
-          item?.product?.vendor?._id
-        )
-        console.log(
-          `cartProducts[${index}].product.vendor.id:`,
-          item?.product?.vendor?.id
-        )
-        console.log(
-          `cartProducts[${index}].product.vendorId:`,
-          item?.product?.vendorId
-        )
-        console.log(
-          `cartProducts[${index}].product.vendorID:`,
-          item?.product?.vendorID
-        )
-        console.log(`cartProducts[${index}].vendorId:`, item?.vendorId)
-        console.log(`cartProducts[${index}].vendorID:`, item?.vendorID)
-        console.log(`cartProducts[${index}].vendor:`, item?.vendor)
-        console.log(
-          `cartProducts[${index}].vendor keys:`,
-          Object.keys(item?.vendor || {})
-        )
-        console.log(`cartProducts[${index}].vendor._id:`, item?.vendor?._id)
-        console.log(`cartProducts[${index}].vendor.id:`, item?.vendor?.id)
-
+        // console.log(
+        //   `cartProducts[${index}].product.vendor:`,
+        //   item?.product?.vendor
+        // )
+        // console.log(
+        //   `cartProducts[${index}].product.vendor keys:`,
+        //   Object.keys(item?.product?.vendor || {})
+        // )
+        // console.log(
+        //   `cartProducts[${index}].product.vendor._id:`,
+        //   item?.product?.vendor?._id
+        // )
+        // console.log(
+        //   `cartProducts[${index}].product.vendor.id:`,
+        //   item?.product?.vendor?.id
+        // )
+        // console.log(
+        //   `cartProducts[${index}].product.vendorId:`,
+        //   item?.product?.vendorId
+        // )
+        // console.log(
+        //   `cartProducts[${index}].product.vendorID:`,
+        //   item?.product?.vendorID
+        // )
+        // console.log(`cartProducts[${index}].vendorId:`, item?.vendorId)
+        // console.log(`cartProducts[${index}].vendorID:`, item?.vendorID)
+        // console.log(`cartProducts[${index}].vendor:`, item?.vendor)
+        // console.log(
+        //   `cartProducts[${index}].vendor keys:`,
+        //   Object.keys(item?.vendor || {})
+        // )
+        // console.log(`cartProducts[${index}].vendor._id:`, item?.vendor?._id)
+        // console.log(`cartProducts[${index}].vendor.id:`, item?.vendor?.id)
         // Other product details
-        console.log(`cartProducts[${index}].quantity:`, item?.quantity)
-        console.log(
-          `cartProducts[${index}].product.price:`,
-          item?.product?.price
-        )
-        console.log(`cartProducts[${index}].price:`, item?.price)
-        console.log(
-          `cartProducts[${index}].product.length:`,
-          item?.product?.length
-        )
-        console.log(
-          `cartProducts[${index}].product.width:`,
-          item?.product?.width
-        )
+        // console.log(`cartProducts[${index}].quantity:`, item?.quantity)
+        // console.log(
+        //   `cartProducts[${index}].product.price:`,
+        //   item?.product?.price
+        // )
+        // console.log(`cartProducts[${index}].price:`, item?.price)
+        // console.log(
+        //   `cartProducts[${index}].product.length:`,
+        //   item?.product?.length
+        // )
+        // console.log(
+        //   `cartProducts[${index}].product.width:`,
+        //   item?.product?.width
+        // )
       })
     }
 
     // Check order details
-    console.log('--- ORDER DETAILS ---')
-    console.log(
-      'deliveryDetails.orderDetails:',
-      orderData?.deliveryDetails?.orderDetails
-    )
-    console.log(
-      'deliveryDetails.orderDetails keys:',
-      Object.keys(orderData?.deliveryDetails?.orderDetails || {})
-    )
-    console.log(
-      'deliveryDetails.orderDetails.orderNote:',
-      orderData?.deliveryDetails?.orderDetails?.orderNote
-    )
-    console.log(
-      'deliveryDetails.orderDetails.owner:',
-      orderData?.deliveryDetails?.orderDetails?.owner
-    )
-    console.log(
-      'deliveryDetails.orderDetails.owner keys:',
-      Object.keys(orderData?.deliveryDetails?.orderDetails?.owner || {})
-    )
-    console.log(
-      'deliveryDetails.orderDetails.owner.name:',
-      orderData?.deliveryDetails?.orderDetails?.owner?.name
-    )
+    // console.log('--- ORDER DETAILS ---')
+    // console.log(
+    //   'deliveryDetails.orderDetails:',
+    //   orderData?.deliveryDetails?.orderDetails
+    // )
+    // console.log(
+    //   'deliveryDetails.orderDetails keys:',
+    //   Object.keys(orderData?.deliveryDetails?.orderDetails || {})
+    // )
+    // console.log(
+    //   'deliveryDetails.orderDetails.orderNote:',
+    //   orderData?.deliveryDetails?.orderDetails?.orderNote
+    // )
+    // console.log(
+    //   'deliveryDetails.orderDetails.owner:',
+    //   orderData?.deliveryDetails?.orderDetails?.owner
+    // )
+    // console.log(
+    //   'deliveryDetails.orderDetails.owner keys:',
+    //   Object.keys(orderData?.deliveryDetails?.orderDetails?.owner || {})
+    // )
+    // console.log(
+    //   'deliveryDetails.orderDetails.owner.name:',
+    //   orderData?.deliveryDetails?.orderDetails?.owner?.name
+    // )
 
     // Check other fields
-    console.log('--- OTHER FIELDS ---')
-    console.log('email:', orderData?.email)
-    console.log('totalAmount:', orderData?.totalAmount)
-    console.log('taxFee:', orderData?.taxFee)
+    // console.log('--- OTHER FIELDS ---')
+    // console.log('email:', orderData?.email)
+    // console.log('totalAmount:', orderData?.totalAmount)
+    // console.log('taxFee:', orderData?.taxFee)
 
-    console.log('=== END DEBUG LOG ===')
+    // console.log('=== END DEBUG LOG ===')
   }
 
   // Enhanced createOrder function with comprehensive debugging
@@ -1184,10 +1181,10 @@ const VerifyPaymentContent = () => {
         orderData?.discountedPrice || originalTotalAmount
       ) // Amount actually paid
 
-      console.log('=== PAYMENT AMOUNTS ===')
-      console.log('Original total amount:', originalTotalAmount)
-      console.log('Actual paid amount (discounted):', actualPaidAmount)
-      console.log('Promo code applied:', orderData?.promoCode)
+      // console.log('=== PAYMENT AMOUNTS ===')
+      // console.log('Original total amount:', originalTotalAmount)
+      // console.log('Actual paid amount (discounted):', actualPaidAmount)
+      // console.log('Promo code applied:', orderData?.promoCode)
 
       if (originalTotalAmount <= 0) {
         throw new Error('Total amount must be greater than 0')
@@ -1247,8 +1244,8 @@ const VerifyPaymentContent = () => {
         orderPayload.discountedPrice = actualPaidAmount
       }
 
-      console.log('=== FINAL ORDER PAYLOAD ===')
-      console.log('Order payload:', JSON.stringify(orderPayload, null, 2))
+      // console.log('=== FINAL ORDER PAYLOAD ===')
+      // console.log('Order payload:', JSON.stringify(orderPayload, null, 2))
 
       // Create order
       const response = isShopmate
@@ -1260,10 +1257,10 @@ const VerifyPaymentContent = () => {
           })
         : await checkoutOrder(orderPayload)
 
-      console.log('Order creation response:', {
-        hasError: response?.hasError,
-        message: response?.message?.substring(0, 100),
-      })
+      // console.log('Order creation response:', {
+      //   hasError: response?.hasError,
+      //   message: response?.message?.substring(0, 100),
+      // })
 
       if (response?.hasError) {
         throw new Error(response.message || 'Failed to create order')
@@ -1271,19 +1268,19 @@ const VerifyPaymentContent = () => {
 
       return response
     } catch (error) {
-      console.error('Order creation failed:', error)
+      // console.error('Order creation failed:', error)
       throw error
     }
   }
 
   const handlePaymentVerification = async () => {
     if (hasProcessedRef.current) {
-      console.log('Payment verification already in progress')
+      // console.log('Payment verification already in progress')
       return
     }
 
     hasProcessedRef.current = true
-    console.log('Starting payment verification')
+    // console.log('Starting payment verification')
 
     try {
       const reference = searchParams.get('reference')
@@ -1291,7 +1288,7 @@ const VerifyPaymentContent = () => {
         throw new Error('No payment reference found in URL')
       }
 
-      console.log('Payment reference:', reference)
+      // console.log('Payment reference:', reference)
 
       // Get stored order data
       const storedData = sessionStorage.getItem('pendingOrderData')
@@ -1302,17 +1299,17 @@ const VerifyPaymentContent = () => {
       }
 
       const parsedOrderData: StoredOrderData = JSON.parse(storedData)
-      console.log('Order data loaded successfully')
+      // console.log('Order data loaded successfully')
       setOrderData(parsedOrderData)
 
       // Verify payment
-      console.log('Verifying payment...')
+      // console.log('Verifying payment...')
       setStatus('verifying')
       const verificationResponse = await verifyPayment(reference)
-      console.log(
-        'Payment verification completed:',
-        verificationResponse?.data?.status
-      )
+      // console.log(
+      //   'Payment verification completed:',
+      //   verificationResponse?.data?.status
+      // )
 
       if (
         verificationResponse?.hasError ||
@@ -1327,39 +1324,39 @@ const VerifyPaymentContent = () => {
       }
 
       // Create order
-      console.log('Creating order...')
+      // console.log('Creating order...')
       setStatus('creating-order')
       const orderResponse = await createOrder(reference, parsedOrderData)
 
       if (!orderResponse?.hasError) {
-        console.log('Order created successfully')
+        // console.log('Order created successfully')
         setStatus('success')
 
         // Clear carts with proper error handling and logging
         try {
-          console.log('Starting cart clearing process...')
+          // console.log('Starting cart clearing process...')
 
           // Clear Redux cart first (this is synchronous and reliable)
           dispatch(cartActions.clearCart())
-          console.log('Redux cart cleared successfully')
+          // console.log('Redux cart cleared successfully')
 
           // Clear server cart with retry logic
           const clearResult = await clearCart(3) // 3 retry attempts
 
           if (clearResult.hasError) {
-            console.error('Failed to clear server cart:', clearResult.message)
+            // console.error('Failed to clear server cart:', clearResult.message)
             // You might want to show a warning to user or retry later
             // Don't throw error here as order was already created successfully
           } else {
-            console.log('Server cart cleared successfully')
+            // console.log('Server cart cleared successfully')
           }
 
           // Clear session storage after successful cart clearing
           try {
             sessionStorage.removeItem('pendingOrderData')
-            console.log('Session storage cleared')
+            // console.log('Session storage cleared')
           } catch (error) {
-            console.error('Failed to clear session storage:', error)
+            // console.error('Failed to clear session storage:', error)
           }
         } catch (error) {
           console.error('Error during cart clearing process:', error)
