@@ -16,6 +16,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import CartCounter from '../CartPage/CartCounter'
 import { Button } from '../ui/button'
+import ProductDescription from './ProductDesc'
 
 type PropsType = {
   product: Product
@@ -490,9 +491,11 @@ const ProductDetailsCard = ({ product }: PropsType) => {
         </div>
 
         {/* Product Description */}
-        <div className='py-6 border-b'>
+        {/* <div className='py-6 border-b'>
           <p className='text-gray-600 leading-relaxed'>{product.description}</p>
-        </div>
+        </div> */}
+
+        <ProductDescription description={product.description} maxLines={4} />
 
         {/* Variants Selection */}
         {hasVariants && (
@@ -732,16 +735,10 @@ const ProductDetailsCard = ({ product }: PropsType) => {
           <li className='flex items-center gap-3'>
             <BiCheckCircle className='text-[#3bb77e] text-xl flex-shrink-0' />
             <p className='text-sm text-gray-700'>
-              Free delivery on orders over{' '}
-              <span className='font-medium text-[#3bb77e]'>₦10,000</span>
+              Free delivery coming soon for Prime customers
             </p>
           </li>
-          <li className='flex items-center gap-3'>
-            <BiCheckCircle className='text-[#3bb77e] text-xl flex-shrink-0' />
-            <p className='text-sm text-gray-700'>
-              Delivery within Lagos: 24 hours
-            </p>
-          </li>
+
           <li className='flex items-center gap-3'>
             <BiCheckCircle className='text-[#3bb77e] text-xl flex-shrink-0' />
             <p className='text-sm text-gray-700'>
@@ -754,6 +751,19 @@ const ProductDetailsCard = ({ product }: PropsType) => {
               Secure payment with multiple options
             </p>
           </li>
+          <li className='flex items-center gap-3'>
+            <BiCheckCircle className='text-[#3bb77e] text-xl flex-shrink-0' />
+            <p className='text-sm text-gray-700'>
+              Same Week Delivery on Fridays within the campus and cities{' '}
+            </p>
+          </li>
+          <li className='flex items-center gap-3'>
+            <BiCheckCircle className='text-[#3bb77e] text-xl flex-shrink-0' />
+            <p className='text-sm text-gray-700'>
+              <span className='font-medium'>Call to Order: </span>
+              <span>{'(+234) 8029636616'}</span>
+            </p>
+          </li>
         </ul>
       </div>
 
@@ -761,10 +771,6 @@ const ProductDetailsCard = ({ product }: PropsType) => {
       <div className='bg-white rounded-2xl p-8 shadow-sm'>
         <Accordion
           data={[
-            {
-              title: 'Product Details',
-              description: product.description,
-            },
             {
               title: 'Specifications',
               description: `

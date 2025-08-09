@@ -155,8 +155,8 @@ export default function HeroSection({ query, category }: PropsType) {
 
       {/* Bottom info bar */}
       <div className='absolute bottom-0 left-0 right-0 bg-white/10 backdrop-blur-sm z-10'>
-        <div className='container mx-auto px-4 py-4'>
-          <div className='flex flex-wrap justify-center gap-8 text-white text-sm'>
+        <div className='container mx-auto px-4 py-1 mb-6'>
+          <div className='flex flex-wrap  justify-center gap-8  text-white text-sm'>
             <div className='flex items-center gap-2'>
               <FaShieldAlt className='w-5 h-5' />
               <span>Secure Payments</span>
@@ -165,9 +165,15 @@ export default function HeroSection({ query, category }: PropsType) {
               <FaTruck className='w-5 h-5' />
               <span>Fast Delivery</span>
             </div>
-            <div className='flex items-center gap-2'>
+
+            <div className=' hidden lg:flex items-center gap-2'>
               <FaExchangeAlt className='w-5 h-5' />
               <span>Easy Returns</span>
+            </div>
+
+            <div className='flex items-center gap-2'>
+              <FaTruck className='w-5 h-5' />
+              <span>Call to Order: (+234) 8029636616</span>
             </div>
           </div>
         </div>

@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import { PanInfo, motion, useMotionValue } from 'framer-motion'
-import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
 import { RiImageLine } from 'react-icons/ri'
 import Image from 'next/image'
 
@@ -40,7 +39,7 @@ const ProductImages = ({
   images,
   folderName,
   altText = 'Product Image',
-  autoplayInterval = 10000,
+  autoplayInterval = 1000,
   className = '',
   priority = false,
 }: PropsType) => {
@@ -201,165 +200,303 @@ const ProductImages = ({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <div
-        className='relative w-full aspect-square rounded-2xl overflow-hidden bg-white p-2 sm:p-4 shadow-sm'
-        onMouseEnter={pauseAutoplay}
-        onMouseLeave={resumeAutoplay}
-        onTouchStart={pauseAutoplay}
-        onTouchEnd={resumeAutoplay}
-        ref={carouselRef}
-      >
-        {hasImages ? (
-          <div className='relative w-full h-full overflow-hidden rounded-lg'>
-            <motion.div
-              drag='x'
-              dragConstraints={{ left: 0, right: 0 }}
-              style={{ x: dragX }}
-              animate={{ translateX: `-${currentIndex * 100}%` }}
-              transition={springOptions}
-              onDragEnd={onDragEnd}
-              className='flex h-full cursor-grab active:cursor-grabbing'
-            >
+      {/* Mobile Layout with thumbnails on the left */}
+      <div className='md:hidden'>
+        {processedImages.length > 1 ? (
+          <div className='flex gap-4'>
+            {/* Thumbnails on the left for mobile */}
+            <div className='flex flex-col gap-2 w-16'>
               {processedImages.map((imageUrl, index) => (
-                <div
+                <button
                   key={index}
-                  className='w-full h-full flex-shrink-0 relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100'
+                  onClick={() => goToSlide(index)}
+                  className={`relative w-16 h-16 aspect-square rounded-lg overflow-hidden flex-shrink-0 transition-all ${
+                    currentIndex === index
+                      ? 'ring-2 ring-[#3bb77e] ring-offset-2 scale-105'
+                      : 'hover:ring-2 hover:ring-gray-200'
+                  }`}
+                  aria-label={`View image ${index + 1}`}
                 >
-                  <motion.div
-                    animate={{ scale: currentIndex === index ? 1 : 0.95 }}
-                    transition={springOptions}
-                    className='w-full h-full relative'
-                  >
-                    {/* Loading skeleton */}
-                    {imageLoadingStates[index] && (
-                      <div className='absolute inset-0 z-10'>
-                        <ImageSkeleton />
-                      </div>
-                    )}
+                  {/* Thumbnail loading state and error handling */}
+                  {imageLoadingStates[index] && (
+                    <div className='absolute inset-0 z-10'>
+                      <ImageSkeleton />
+                    </div>
+                  )}
 
-                    {/* Show image if not errored, otherwise show fallback */}
-                    {!imageErrors[index] ? (
-                      <Image
-                        src={imageUrl}
-                        alt={`${altText} - ${index + 1}`}
-                        fill
-                        sizes={getSizesAttribute()}
-                        className='object-contain transition-all duration-500 p-3 sm:p-4'
-                        style={{
-                          opacity: imageLoadingStates[index] ? 0 : 1,
-                          objectPosition: 'center',
-                        }}
-                        priority={
-                          priority && (index === 0 || index === currentIndex)
-                        }
-                        onLoad={() => handleImageLoad(index)}
-                        onError={() => handleImageError(index)}
-                        loading={index === 0 && priority ? 'eager' : 'lazy'}
-                        quality={90}
-                        placeholder='blur'
-                        blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
-                      />
-                    ) : (
-                      <ImageFallback />
-                    )}
-                  </motion.div>
-                </div>
+                  {!imageErrors[index] ? (
+                    <Image
+                      src={imageUrl}
+                      alt={`Thumbnail ${index + 1}`}
+                      fill
+                      sizes='64px'
+                      className='object-cover'
+                      style={{
+                        opacity: imageLoadingStates[index] ? 0 : 1,
+                      }}
+                      priority={false}
+                      onLoad={() => handleImageLoad(index)}
+                      onError={() => handleImageError(index)}
+                      loading='lazy'
+                      quality={80}
+                      placeholder='blur'
+                      blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
+                    />
+                  ) : (
+                    <div className='flex items-center justify-center h-full w-full bg-gray-100'>
+                      <RiImageLine className='w-6 h-6 text-gray-400' />
+                    </div>
+                  )}
+                </button>
               ))}
-            </motion.div>
+            </div>
+
+            {/* Main image container */}
+            <div
+              className='relative flex-1 aspect-square rounded-2xl overflow-hidden bg-white p-2 sm:p-4 shadow-sm'
+              onMouseEnter={pauseAutoplay}
+              onMouseLeave={resumeAutoplay}
+              onTouchStart={pauseAutoplay}
+              onTouchEnd={resumeAutoplay}
+              ref={carouselRef}
+            >
+              <div className='relative w-full h-full overflow-hidden rounded-lg'>
+                <motion.div
+                  drag='x'
+                  dragConstraints={{ left: 0, right: 0 }}
+                  style={{ x: dragX }}
+                  animate={{ translateX: `-${currentIndex * 100}%` }}
+                  transition={springOptions}
+                  onDragEnd={onDragEnd}
+                  className='flex h-full cursor-grab active:cursor-grabbing'
+                >
+                  {processedImages.map((imageUrl, index) => (
+                    <div
+                      key={index}
+                      className='w-full h-full flex-shrink-0 relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100'
+                    >
+                      <motion.div
+                        animate={{ scale: currentIndex === index ? 1 : 0.95 }}
+                        transition={springOptions}
+                        className='w-full h-full relative'
+                      >
+                        {/* Loading skeleton */}
+                        {imageLoadingStates[index] && (
+                          <div className='absolute inset-0 z-10'>
+                            <ImageSkeleton />
+                          </div>
+                        )}
+
+                        {/* Show image if not errored, otherwise show fallback */}
+                        {!imageErrors[index] ? (
+                          <Image
+                            src={imageUrl}
+                            alt={`${altText} - ${index + 1}`}
+                            fill
+                            sizes={getSizesAttribute()}
+                            className='object-contain transition-all duration-500 p-3 sm:p-4'
+                            style={{
+                              opacity: imageLoadingStates[index] ? 0 : 1,
+                              objectPosition: 'center',
+                            }}
+                            priority={
+                              priority &&
+                              (index === 0 || index === currentIndex)
+                            }
+                            onLoad={() => handleImageLoad(index)}
+                            onError={() => handleImageError(index)}
+                            loading={index === 0 && priority ? 'eager' : 'lazy'}
+                            quality={90}
+                            placeholder='blur'
+                            blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
+                          />
+                        ) : (
+                          <ImageFallback />
+                        )}
+                      </motion.div>
+                    </div>
+                  ))}
+                </motion.div>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className='flex items-center justify-center h-full'>
-            <ImageFallback />
-          </div>
-        )}
+          <div
+            className='relative w-full aspect-square rounded-2xl overflow-hidden bg-white p-2 sm:p-4 shadow-sm'
+            ref={carouselRef}
+          >
+            {hasImages ? (
+              <div className='relative w-full h-full overflow-hidden rounded-lg'>
+                <motion.div className='flex h-full'>
+                  <div className='w-full h-full flex-shrink-0 relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100'>
+                    <motion.div className='w-full h-full relative'>
+                      {/* Loading skeleton */}
+                      {imageLoadingStates[0] && (
+                        <div className='absolute inset-0 z-10'>
+                          <ImageSkeleton />
+                        </div>
+                      )}
 
-        {/* Navigation Arrows - Only show when multiple images */}
-        {processedImages.length > 1 && (
-          <>
-            <button
-              onClick={goToPrevious}
-              aria-label='Previous image'
-              className='absolute left-1 sm:left-2 md:left-4 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 z-20'
-            >
-              <ChevronLeftIcon className='w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 text-gray-700' />
-            </button>
-            <button
-              onClick={goToNext}
-              aria-label='Next image'
-              className='absolute right-1 sm:right-2 md:right-4 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 z-20'
-            >
-              <ChevronRightIcon className='w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 text-gray-700' />
-            </button>
-          </>
-        )}
-
-        {/* Image indicators for small screens */}
-        {processedImages.length > 1 && (
-          <div className='absolute bottom-1 sm:bottom-2 left-0 right-0 flex justify-center gap-1 sm:gap-1.5 md:hidden z-20'>
-            {processedImages.map((_, index) => (
-              <button
-                key={`indicator-${index}`}
-                onClick={() => goToSlide(index)}
-                className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all backdrop-blur-sm ${
-                  currentIndex === index
-                    ? 'bg-[#3bb77e] w-3 sm:w-4 shadow-md'
-                    : 'bg-white/70 hover:bg-white/90'
-                }`}
-                aria-label={`Go to image ${index + 1}`}
-              />
-            ))}
+                      {/* Show image if not errored, otherwise show fallback */}
+                      {!imageErrors[0] && processedImages[0] ? (
+                        <Image
+                          src={processedImages[0]}
+                          alt={altText}
+                          fill
+                          sizes={getSizesAttribute()}
+                          className='object-contain transition-all duration-500 p-3 sm:p-4'
+                          style={{
+                            opacity: imageLoadingStates[0] ? 0 : 1,
+                            objectPosition: 'center',
+                          }}
+                          priority={priority}
+                          onLoad={() => handleImageLoad(0)}
+                          onError={() => handleImageError(0)}
+                          loading={priority ? 'eager' : 'lazy'}
+                          quality={90}
+                          placeholder='blur'
+                          blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
+                        />
+                      ) : (
+                        <ImageFallback />
+                      )}
+                    </motion.div>
+                  </div>
+                </motion.div>
+              </div>
+            ) : (
+              <div className='flex items-center justify-center h-full'>
+                <ImageFallback />
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Thumbnails - Only show when multiple images and on larger screens */}
-      {processedImages.length > 1 && (
-        <div className='hidden md:flex gap-2 lg:gap-4 overflow-x-auto pb-2 snap-x scrollbar-hide'>
-          {processedImages.map((imageUrl, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={`relative w-16 h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 aspect-square rounded-lg overflow-hidden flex-shrink-0 transition-all snap-start ${
-                currentIndex === index
-                  ? 'ring-2 ring-[#3bb77e] ring-offset-2 scale-105'
-                  : 'hover:ring-2 hover:ring-gray-200 hover:scale-102'
-              }`}
-              aria-label={`View image ${index + 1}`}
-            >
-              {/* Thumbnail loading state and error handling */}
-              {imageLoadingStates[index] && (
-                <div className='absolute inset-0 z-10'>
-                  <ImageSkeleton />
-                </div>
-              )}
+      {/* Desktop Layout (unchanged) */}
+      <div className='hidden md:block space-y-4'>
+        <div
+          className='relative w-full aspect-square rounded-2xl overflow-hidden bg-white p-2 sm:p-4 shadow-sm'
+          onMouseEnter={pauseAutoplay}
+          onMouseLeave={resumeAutoplay}
+          onTouchStart={pauseAutoplay}
+          onTouchEnd={resumeAutoplay}
+          ref={carouselRef}
+        >
+          {hasImages ? (
+            <div className='relative w-full h-full overflow-hidden rounded-lg'>
+              <motion.div
+                drag='x'
+                dragConstraints={{ left: 0, right: 0 }}
+                style={{ x: dragX }}
+                animate={{ translateX: `-${currentIndex * 100}%` }}
+                transition={springOptions}
+                onDragEnd={onDragEnd}
+                className='flex h-full cursor-grab active:cursor-grabbing'
+              >
+                {processedImages.map((imageUrl, index) => (
+                  <div
+                    key={index}
+                    className='w-full h-full flex-shrink-0 relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100'
+                  >
+                    <motion.div
+                      animate={{ scale: currentIndex === index ? 1 : 0.95 }}
+                      transition={springOptions}
+                      className='w-full h-full relative'
+                    >
+                      {/* Loading skeleton */}
+                      {imageLoadingStates[index] && (
+                        <div className='absolute inset-0 z-10'>
+                          <ImageSkeleton />
+                        </div>
+                      )}
 
-              {!imageErrors[index] ? (
-                <Image
-                  src={imageUrl}
-                  alt={`Thumbnail ${index + 1}`}
-                  fill
-                  sizes={getThumbnailSizes()}
-                  className='object-cover'
-                  style={{
-                    opacity: imageLoadingStates[index] ? 0 : 1,
-                  }}
-                  priority={false}
-                  onLoad={() => handleImageLoad(index)}
-                  onError={() => handleImageError(index)}
-                  loading='lazy'
-                  quality={80}
-                  placeholder='blur'
-                  blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
-                />
-              ) : (
-                <div className='flex items-center justify-center h-full w-full bg-gray-100'>
-                  <RiImageLine className='w-6 h-6 text-gray-400' />
-                </div>
-              )}
-            </button>
-          ))}
+                      {/* Show image if not errored, otherwise show fallback */}
+                      {!imageErrors[index] ? (
+                        <Image
+                          src={imageUrl}
+                          alt={`${altText} - ${index + 1}`}
+                          fill
+                          sizes={getSizesAttribute()}
+                          className='object-contain transition-all duration-500 p-3 sm:p-4'
+                          style={{
+                            opacity: imageLoadingStates[index] ? 0 : 1,
+                            objectPosition: 'center',
+                          }}
+                          priority={
+                            priority && (index === 0 || index === currentIndex)
+                          }
+                          onLoad={() => handleImageLoad(index)}
+                          onError={() => handleImageError(index)}
+                          loading={index === 0 && priority ? 'eager' : 'lazy'}
+                          quality={90}
+                          placeholder='blur'
+                          blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
+                        />
+                      ) : (
+                        <ImageFallback />
+                      )}
+                    </motion.div>
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+          ) : (
+            <div className='flex items-center justify-center h-full'>
+              <ImageFallback />
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Thumbnails - Only show when multiple images and on larger screens */}
+        {processedImages.length > 1 && (
+          <div className='flex gap-2 lg:gap-4 overflow-x-auto pb-2 snap-x scrollbar-hide'>
+            {processedImages.map((imageUrl, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`relative w-16 h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 aspect-square rounded-lg overflow-hidden flex-shrink-0 transition-all snap-start ${
+                  currentIndex === index
+                    ? 'ring-2 ring-[#3bb77e] ring-offset-2 scale-105'
+                    : 'hover:ring-2 hover:ring-gray-200 hover:scale-102'
+                }`}
+                aria-label={`View image ${index + 1}`}
+              >
+                {/* Thumbnail loading state and error handling */}
+                {imageLoadingStates[index] && (
+                  <div className='absolute inset-0 z-10'>
+                    <ImageSkeleton />
+                  </div>
+                )}
+
+                {!imageErrors[index] ? (
+                  <Image
+                    src={imageUrl}
+                    alt={`Thumbnail ${index + 1}`}
+                    fill
+                    sizes={getThumbnailSizes()}
+                    className='object-cover'
+                    style={{
+                      opacity: imageLoadingStates[index] ? 0 : 1,
+                    }}
+                    priority={false}
+                    onLoad={() => handleImageLoad(index)}
+                    onError={() => handleImageError(index)}
+                    loading='lazy'
+                    quality={80}
+                    placeholder='blur'
+                    blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
+                  />
+                ) : (
+                  <div className='flex items-center justify-center h-full w-full bg-gray-100'>
+                    <RiImageLine className='w-6 h-6 text-gray-400' />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

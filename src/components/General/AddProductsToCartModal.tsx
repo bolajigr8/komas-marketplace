@@ -55,16 +55,39 @@ const AddProductToCartModal = ({
   const { data: session } = useSession()
   const cartProducts = useAppSelector((state) => state.cart.products)
 
-  // Process product images
+  // Process product images - handle both product images and variant images
   const productImages = useMemo(() => {
-    if (!product.images || product.images.length === 0) return []
-    const imageArray = Array.isArray(product.images)
-      ? product.images
-      : [product.images]
-    return imageArray
-      .filter((img) => !!img)
-      .map((img) => `${process.env.NEXT_PUBLIC_AWS_URL}/products/${img}`)
-  }, [product.images])
+    let allImages = []
+
+    // Add main product images
+    if (product.images && product.images.length > 0) {
+      const imageArray = Array.isArray(product.images)
+        ? product.images
+        : [product.images]
+      const productImageUrls = imageArray
+        .filter((img) => !!img)
+        .map((img) => `${process.env.NEXT_PUBLIC_AWS_URL}/products/${img}`)
+      allImages.push(...productImageUrls)
+    }
+
+    // Add variant images if they exist
+    if (product.variants && product.variants.length > 0) {
+      product.variants.forEach((variant) => {
+        if (variant.images && variant.images.length > 0) {
+          const variantImageArray = Array.isArray(variant.images)
+            ? variant.images
+            : [variant.images]
+          const variantImageUrls = variantImageArray
+            .filter((img) => !!img)
+            .map((img) => `${process.env.NEXT_PUBLIC_AWS_URL}/products/${img}`)
+          allImages.push(...variantImageUrls)
+        }
+      })
+    }
+
+    // Remove duplicates and return
+    return Array.from(new Set(allImages))
+  }, [product.images, product.variants])
 
   // Auto-slide functionality
   useEffect(() => {
@@ -393,26 +416,27 @@ const AddProductToCartModal = ({
               )}
             </div>
 
-            {/* Horizontal Thumbnail Scroll for Large Screens */}
+            {/* Thumbnails at bottom for large screens */}
             {productImages.length > 1 && (
-              <div className='w-full max-w-md overflow-x-auto'>
-                <div className='flex gap-2 p-2'>
+              <div className='w-full max-w-md overflow-hidden pb-2'>
+                <div className='flex gap-2 lg:gap-4 snap-x scrollbar-hide'>
                   {productImages.map((image, index) => (
                     <button
                       key={index}
                       onClick={() => handleThumbnailClick(index)}
-                      className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                      className={`relative w-16 h-16 lg:w-20 lg:h-20 xl:w-24 xl:h-24 aspect-square rounded-lg overflow-hidden flex-shrink-0 transition-all snap-start ${
                         currentImageIndex === index
-                          ? 'border-[#3bb77e] shadow-md'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'ring-2 ring-[#3bb77e] ring-offset-2 scale-105'
+                          : 'hover:ring-2 hover:ring-gray-200 hover:scale-102'
                       }`}
+                      aria-label={`View image ${index + 1}`}
                     >
                       <Image
                         src={image}
                         alt={`${product.name} ${index + 1}`}
-                        width={64}
-                        height={64}
-                        className='object-cover w-full h-full bg-gray-200'
+                        fill
+                        className='object-cover bg-gray-200'
+                        sizes='(max-width: 1024px) 64px, (max-width: 1280px) 80px, 96px'
                       />
                     </button>
                   ))}
@@ -671,38 +695,43 @@ const AddProductToCartModal = ({
         </div>
 
         {/* Mobile Layout */}
-        <div className='lg:hidden h-[75vh]'>
+        <div className='lg:hidden h-[90vh]  '>
           {/* Mobile Image Section with Left Vertical Thumbnails */}
-          <div className='relative bg-gray-100 h-[30vh] flex'>
-            {/* Left Vertical Thumbnail Scroll for Mobile */}
-            {productImages.length > 1 && (
-              <div className='w-14 bg-gray-50 border-r border-gray-200 flex-shrink-0'>
-                <div className='p-1 space-y-1'>
-                  {productImages.map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleThumbnailClick(index)}
-                      className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
-                        currentImageIndex === index
-                          ? 'border-[#3bb77e] shadow-md'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <Image
-                        src={image}
-                        alt={`${product.name} ${index + 1}`}
-                        width={48}
-                        height={48}
-                        className='object-cover w-full h-full bg-gray-200'
-                      />
-                    </button>
-                  ))}
+          <div className='relative bg-gray-100  py-4 pt-6 px-2 h-[30vh] flex justify-between'>
+            {/* Left Vertical Thumbnails for Mobile */}
+
+            <div className=' mr-2 w-1/6 border-2   overflow-hidden'>
+              {productImages.length > 1 && (
+                <div className=' bg-gray-50 border-r  border-gray-200  overflow-hidden'>
+                  <div className='p-1 space-y-1'>
+                    {productImages.map((image, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleThumbnailClick(index)}
+                        className={`w-18 h-14 rounded-lg overflow-hidden border-2 transition-all ${
+                          currentImageIndex === index
+                            ? 'ring-2 ring-[#3bb77e] ring-offset-2 scale-105'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        aria-label={`View image ${index + 1}`}
+                      >
+                        <Image
+                          src={image}
+                          alt={`${product.name} ${index + 1}`}
+                          width={48}
+                          height={48}
+                          className='object-cover w-full h-full bg-gray-200'
+                          sizes='48px'
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Main Image Display */}
-            <div className='flex-1 relative'>
+            <div className=' w-4/6 mr-2  relative'>
               {productImages.length > 0 && !imageError ? (
                 <div className='w-full h-full relative bg-gray-200'>
                   {!isImageLoaded && (
@@ -714,7 +743,7 @@ const AddProductToCartModal = ({
                     src={productImages[currentImageIndex]}
                     alt={product.name}
                     fill
-                    className='object-contain p-4'
+                    className='object-contain p-2'
                     style={{ opacity: isImageLoaded ? 1 : 0 }}
                     onLoad={handleImageLoad}
                     onError={handleImageError}

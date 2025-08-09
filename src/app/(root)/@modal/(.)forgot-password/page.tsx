@@ -88,8 +88,8 @@ const InterceptedForgotPassword = ({ searchParams }: PropsType) => {
   const { data } = schema.safeParse(searchParams)
   const [isOpen, setIsOpen] = React.useState(true)
 
-  // const callbackUrl = data?.callbackUrl || 'https://example.com/dashboard'
-  const callbackUrl = 'https://komas-blacksales.vercel.app/reg-success'
+  const callbackUrl = data?.callbackUrl || 'https://example.com/dashboard'
+  // const callbackUrl = 'https://komas-blacksales.vercel.app/reg-success'
 
   return (
     <InterceptModal isOpen={isOpen} setIsOpen={setIsOpen}>

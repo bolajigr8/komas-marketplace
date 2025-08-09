@@ -22,8 +22,8 @@ const InterceptedSignUp = ({ searchParams }: PropsType) => {
   const [isOpen, setIsOpen] = React.useState(true)
   const router = useRouter()
 
-  // const callbackUrl = data?.callbackUrl || "https://example.com/dashboard";
-  const callbackUrl = 'https://komas-blacksales.vercel.app/reg-success'
+  const callbackUrl = data?.callbackUrl || 'https://example.com/dashboard'
+  // const callbackUrl = 'https://komas-blacksales.vercel.app/reg-success'
 
   const handlePrivacyPolicyClick = () => {
     setIsOpen(false)

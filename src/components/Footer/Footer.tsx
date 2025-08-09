@@ -4,6 +4,7 @@ import { IoLocationOutline } from 'react-icons/io5'
 import { MdOutlineEmail } from 'react-icons/md'
 import NavLink from '../General/NavLink'
 import { footerHelpLinks, footerLinks, socialLinks } from '@/constants'
+import Link from 'next/link'
 
 const Footer = () => {
   const currentYear = new Date().getFullYear()
@@ -25,13 +26,24 @@ const Footer = () => {
               </div>
               <li className='flex items-center gap-1'>
                 <BiPhone className='text-green-500' />
-                <span className='font-medium'>Call Us: </span>
-                <span>{'(+234) 000- 000-000'}</span>
+                <span className='font-medium'>Call to Order: </span>
+                <span>{'(+234) 8029636616'}</span>
               </li>
               <li className='flex items-center gap-1'>
                 <MdOutlineEmail className='text-green-500' />
                 <span className='font-medium'>Email: </span>
                 <span>support@komas500.com</span>
+              </li>
+              <li className='flex items-center gap-1'>
+                <MdOutlineEmail className='text-green-500' />
+                <span className='font-medium'>Chat with Us: </span>
+                <Link
+                  target='_blank'
+                  className='text-green-500'
+                  href='https://wa.me/message/YZKWGYCKDUEGE1'
+                >
+                  Whatsapp Message
+                </Link>
               </li>
             </ul>
           </div>

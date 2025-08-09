@@ -129,6 +129,7 @@ const CartProductCard = ({ cartItem }: { cartItem: CartItem }) => {
             {/* Cart Counter */}
             <div className='flex-shrink-0 lg:ml-4'>
               <CartCounter
+                path='cart'
                 productId={cartItem.product._id}
                 variantId={
                   hasVariant && cartItem.variant

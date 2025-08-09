@@ -82,8 +82,8 @@ const InterceptedSignIn = ({ searchParams }: PropsType) => {
   const { data: session } = useSession()
   const [isOpen, setIsOpen] = React.useState(true)
 
-  // const callbackUrl = data?.callbackUrl || 'https://example.com/dashboard'
-  const callbackUrl = 'https://komas-blacksales.vercel.app/reg-success'
+  const callbackUrl = data?.callbackUrl || 'https://example.com/dashboard'
+  // const callbackUrl = 'https://komas-blacksales.vercel.app/reg-success'
 
   return (
     <>
