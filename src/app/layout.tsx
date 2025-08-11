@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { ThemeProvider } from '@/providers/ThemeProvider'
 import UIProvider from '@/providers/UIProvider'
 import AuthProvider from '@/providers/AuthProvider'
+import GoogleTagManagerLoader from '@/components/General/GoogleTabManager'
 
 const quicksand = Quicksand({ subsets: ['latin'] })
 
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
   },
   description: 'An e-commerce web application',
   icons: {
-    icon: [{ url: '/faviconNB.png', sizes: '196x196', type: 'image/png' }],
+    icon: [{ url: '/favicon-196.png', sizes: '196x196', type: 'image/png' }],
     apple: [{ url: '/apple-icon-180.png' }],
   },
   // appleTouchIcon: "/apple-icon-180.png",
@@ -216,31 +217,7 @@ export default function GeneralLayout({
       className='overscroll-contain scroll-smooth'
       suppressHydrationWarning
     >
-      <head>
-        {/* Google Tag Manager - Place as high in <head> as possible */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-              })(window,document,'script','dataLayer','GTM-MJSH3MM5');
-            `,
-          }}
-        />
-      </head>
       <body className={[quicksand.className, 'custom-scrollbar'].join(' ')}>
-        {/* Google Tag Manager (noscript) - Immediately after opening <body> tag */}
-        <noscript>
-          <iframe
-            src='https://www.googletagmanager.com/ns.html?id=GTM-MJSH3MM5'
-            height='0'
-            width='0'
-            style={{ display: 'none', visibility: 'hidden' }}
-          />
-        </noscript>
-
         <AuthProvider>
           <StoreProvider>
             <QueryProvider>
@@ -260,6 +237,9 @@ export default function GeneralLayout({
             </QueryProvider>
           </StoreProvider>
         </AuthProvider>
+
+        {/* Load GTM only after first user interaction */}
+        {process.env.NODE_ENV === 'production' && <GoogleTagManagerLoader />}
       </body>
     </html>
   )

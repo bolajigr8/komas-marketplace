@@ -4,10 +4,12 @@ import { ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons'
 interface ProductDescriptionProps {
   description: string
   maxLines?: number
+  textProp?: boolean
 }
 
 const ProductDescription: React.FC<ProductDescriptionProps> = ({
   description,
+  textProp = false,
   maxLines = 3,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -47,9 +49,11 @@ const ProductDescription: React.FC<ProductDescriptionProps> = ({
   return (
     <div className='py-6 border-b'>
       <div className='space-y-2'>
-        <h3 className='text-lg font-semibold text-gray-900 mb-4'>
-          Product Description
-        </h3>
+        {textProp ? (
+          <h3 className='text-lg font-semibold text-gray-900 mb-4'>
+            Product Description
+          </h3>
+        ) : null}
 
         <div
           className={`transition-all duration-300 ease-in-out ${

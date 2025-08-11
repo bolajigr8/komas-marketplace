@@ -356,7 +356,7 @@ export const PrivacyPolicyPage: React.FC = () => {
                     <div className='space-y-2 text-gray-700'>
                       <p className='font-medium'>Komas500 Support Team</p>
                       <p>Email: support@komas500.com</p>
-                      <p>Phone: Available soon</p>
+                      <p>Phone: (+234) 8029636616</p>
                     </div>
                   </div>
                 </div>

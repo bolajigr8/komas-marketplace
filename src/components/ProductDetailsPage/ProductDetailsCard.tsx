@@ -495,7 +495,11 @@ const ProductDetailsCard = ({ product }: PropsType) => {
           <p className='text-gray-600 leading-relaxed'>{product.description}</p>
         </div> */}
 
-        <ProductDescription description={product.description} maxLines={4} />
+        <ProductDescription
+          textProp={true}
+          description={product.description}
+          maxLines={4}
+        />
 
         {/* Variants Selection */}
         {hasVariants && (

@@ -42,7 +42,7 @@ const CartGroups = ({ cart }: CartGroupsProps) => {
         ))}
       </div>
       <div className='lg:col-span-2 sticky bottom-4 lg:static lg:bottom-auto z-[49] lg:z-auto '>
-        <div className='bg-white rounded-xl shadow-md p-6  lg:p-2 lg:px-2 lg:w-full lg:max-w-none '>
+        <div className='bg-white rounded-xl shadow-md p-6  lg:p-8 lg:px-4 lg:w-full lg:max-w-none '>
           <TotalSummary cartItems={allItems} />
         </div>
       </div>

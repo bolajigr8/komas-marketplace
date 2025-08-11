@@ -3,6 +3,8 @@
 import React from 'react'
 import { MessageCircle, Phone } from 'lucide-react'
 import Image from 'next/image'
+import { Description } from '@radix-ui/react-toast'
+import { toast } from '@/hooks/use-toast'
 
 interface ContactOptionProps {
   icon: React.ReactNode
@@ -66,11 +68,17 @@ export const ContactPage: React.FC = () => {
     // Replace with actual chat implementation
     console.log('Opening chat...')
     // Example: window.open('chat-url', '_blank')
+    window.location.href = 'https://wa.me/message/YZKWGYCKDUEGE1'
   }
 
   const handleCallClick = () => {
     // Replace with actual call implementation
-    window.location.href = 'tel:+2348181106'
+    // window.location.href = 'tel:+2348181106'
+
+    toast({
+      title: 'You can reach us via the number below',
+      description: 'customer service: (+234) 8029636616',
+    })
   }
 
   return (
@@ -116,7 +124,7 @@ export const ContactPage: React.FC = () => {
                 icon={<Phone size={24} />}
                 label='Call Us'
                 onClick={handleCallClick}
-                ariaLabel='Call our customer service team at 02018881106'
+                ariaLabel='Call our customer service team at (+234) 8029636616'
               />
             </div>
 
@@ -127,11 +135,11 @@ export const ContactPage: React.FC = () => {
             <div className='bg-green-50 border border-green-200 rounded-xl p-6'>
               <h3 className='font-semibold text-gray-800 mb-2'>Direct Line</h3>
               <a
-                href='tel:+2348181106'
+                href='#'
                 className='text-2xl font-bold text-green-600 hover:text-green-700 transition-colors duration-200'
-                aria-label='Call customer service at 02018881106'
+                aria-label='Call customer service at (+234) 8029636616'
               >
-                02018881106
+                (+234) 8029636616
               </a>
             </div>
           </div>
