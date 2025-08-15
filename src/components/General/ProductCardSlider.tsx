@@ -318,7 +318,7 @@
 //       <>
 //         <Card
 //           key={product._id}
-//           className={`group hover:shadow-xl hover:shadow-black/5 transition-all duration-300 hover:-translate-y-1 h-full overflow-hidden border-0 shadow-sm bg-white w-full min-w-[270px] max-w-md mx-auto ${className}`}
+//           className={`group hover:shadow-xl hover:shadow-black/5 transition-all duration-300 hover:-translate-y-1 h-full overflow-hidden border-0 shadow-sm bg-white w-full min-w-[256px] max-w-lg mx-auto ${className}`}
 //         >
 //           <div className='flex flex-col justify-between h-full w-full'>
 //             {/* Enhanced Image Container with increased height and gray background */}
@@ -480,10 +480,13 @@
 // ProductCardSlider.displayName = 'ProductCardSlider'
 
 // export default ProductCardSlider
+
+// // in this some images show and some dont , i get these errors , also are these optimed will this slow my web app , this is whta i get in the console "⨯ upstream image response failed for https://komas500.s3.eu-north-1.amazonaws.com/products/3-product-Share-this-product----Official-Store-Buy-%E2%82%A618K,-Get-20%-Off-NIVEA-Pearl-&-Beauty-Anti-Perspirant-Body-Spray-For-Women,-48h---200ml-(Pack-Of-2)-1755142889558.jpeg 400"
+
 'use client'
 
 import { Product } from '@/lib/types'
-import React, { useEffect, useState, memo, useMemo } from 'react'
+import React, { useEffect, useState, memo, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Card } from '../ui/card'
@@ -502,6 +505,12 @@ import { useSession } from 'next-auth/react'
 import CartCounter from '../CartPage/CartCounter'
 import CustomSlider from './CustomSlider'
 import AddProductToCartModal from './AddProductsToCartModal'
+// Updated import to use the optimized batch fetcher
+import {
+  fetchMultipleSignedImageUrls,
+  preloadImages,
+  queueImageFetch,
+} from '@/lib/getImages'
 
 // Loading skeleton for images
 const ImageSkeleton = () => (
@@ -512,14 +521,32 @@ const ImageSkeleton = () => (
   </div>
 )
 
-// Fallback component for missing images
-const ImageFallback = ({ message = 'No image available' }) => (
+// Enhanced fallback component with retry capability
+const ImageFallback = ({
+  message = 'Image unavailable',
+  onRetry,
+  showRetry = false,
+}: {
+  message?: string
+  onRetry?: () => void
+  showRetry?: boolean
+}) => (
   <div className='flex items-center justify-center w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-t-lg border-2 border-dashed border-gray-200'>
     <div className='flex flex-col items-center justify-center p-6 text-gray-400'>
       <div className='w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-3'>
         <RiImageLine className='w-8 h-8' />
       </div>
-      <span className='text-sm text-center font-medium'>{message}</span>
+      <span className='text-sm text-center font-medium mb-2'>{message}</span>
+      {showRetry && onRetry && (
+        <Button
+          variant='ghost'
+          size='sm'
+          onClick={onRetry}
+          className='text-xs text-blue-600 hover:text-blue-800'
+        >
+          Retry
+        </Button>
+      )}
     </div>
   </div>
 )
@@ -541,10 +568,13 @@ const ProductCardSlider = memo(
     priority = false,
   }: ProductCardHomepageProps) => {
     const [isSync, setIsSync] = useState(true)
-    const [isImageLoaded, setIsImageLoaded] = useState(false)
-    const [imageError, setImageError] = useState(false)
     const [imageLoadingStates, setImageLoadingStates] = useState<boolean[]>([])
     const [showModal, setShowModal] = useState(false)
+    const [signedImageUrls, setSignedImageUrls] = useState<string[]>([])
+    const [isLoadingImages, setIsLoadingImages] = useState(true)
+    const [imageError, setImageError] = useState(false)
+    const [retryCount, setRetryCount] = useState(0)
+
     const dispatch = useAppDispatch()
     const { toast } = useToast()
     const { data: session } = useSession()
@@ -554,56 +584,118 @@ const ProductCardSlider = memo(
       return product.variants && product.variants.length > 0
     }, [product.variants])
 
-    // Use useMemo to calculate hasImages whenever product changes
-    const hasImages = useMemo(() => {
-      return (
-        Array.isArray(product.images) &&
-        product.images.length > 0 &&
-        product.images.some((img) => !!img)
-      )
-    }, [product.images])
-
-    // Process images with optimization
-    const processedImages = useMemo(() => {
+    // Process original images array with better validation
+    const originalImages = useMemo(() => {
       if (!product.images) return []
 
       const imageArray = Array.isArray(product.images)
         ? product.images
         : [product.images]
+
+      // Filter out empty/invalid images and clean image names
       return imageArray
-        .filter((img) => !!img)
-        .map((image) => `${process.env.NEXT_PUBLIC_AWS_URL}/products/${image}`)
+        .filter(
+          (img) => img && typeof img === 'string' && img.trim().length > 0
+        )
+        .map((img) => img.trim())
     }, [product.images])
 
-    // Optimized sizes attribute for slider layout - Enhanced for better image quality
-    const getSizesAttribute = (isSlider = false) => {
+    const hasImages = useMemo(() => {
+      return originalImages.length > 0
+    }, [originalImages])
+
+    // Optimized image loading with batch fetching and error handling
+    const loadImages = useCallback(async () => {
+      if (!originalImages.length) {
+        setIsLoadingImages(false)
+        setImageError(false)
+        return
+      }
+
+      setIsLoadingImages(true)
+      setImageError(false)
+
+      try {
+        console.log(
+          `Loading images for product: ${product.name}`,
+          originalImages
+        )
+
+        // Use batch fetching for better performance
+        const imageRequests = originalImages.map((imageName) => ({
+          imageName,
+          folder: 'products',
+        }))
+
+        const results = await fetchMultipleSignedImageUrls(imageRequests)
+
+        // Extract valid URLs maintaining order
+        const validUrls: string[] = []
+        originalImages.forEach((imageName) => {
+          const cacheKey = `products/${imageName}`
+          const url = results[cacheKey]
+          if (url) {
+            validUrls.push(url)
+          }
+        })
+
+        if (validUrls.length > 0) {
+          setSignedImageUrls(validUrls)
+          setImageLoadingStates(Array(validUrls.length).fill(true))
+          console.log(
+            `Successfully loaded ${validUrls.length}/${originalImages.length} images for: ${product.name}`
+          )
+
+          // Preload first image if priority
+          if (priority && validUrls[0]) {
+            const img = new window.Image()
+            img.src = validUrls[0]
+          }
+        } else {
+          console.warn(`No valid images found for product: ${product.name}`)
+          setImageError(true)
+        }
+      } catch (error) {
+        console.error(
+          `Error loading images for product ${product.name}:`,
+          error
+        )
+        setImageError(true)
+      } finally {
+        setIsLoadingImages(false)
+      }
+    }, [product._id, product.name, originalImages, priority])
+
+    // Load images on mount and when dependencies change
+    useEffect(() => {
+      loadImages()
+    }, [loadImages])
+
+    // Retry function for failed image loads
+    const handleRetryImages = useCallback(() => {
+      if (retryCount < 3) {
+        // Limit retries
+        setRetryCount((prev) => prev + 1)
+        loadImages()
+      }
+    }, [loadImages, retryCount])
+
+    // Optimized sizes attribute
+    const getSizesAttribute = useCallback(() => {
       return '(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 22vw, 18vw'
-    }
+    }, [])
 
     const cartProducts = useAppSelector((state) => state.cart.products)
 
-    // For products without variants, find cart item normally
-    // For products with variants, we'll handle this in the modal
     const cartItem = useMemo(() => {
       if (hasVariants) {
-        // For products with variants, we can't determine the exact cart item here
-        // since we don't know which variant the user wants to add
-        // Return any cart item for this product to show that something is in cart
         return cartProducts.find((item) => item.product?._id === product._id)
       } else {
-        // For products without variants, find exact match
         return cartProducts.find(
           (item) => item.product?._id === product._id && !item.variant
         )
       }
     }, [cartProducts, product._id, hasVariants])
-
-    // Reset image states when product changes
-    useEffect(() => {
-      setImageError(false)
-      setIsImageLoaded(false)
-      setImageLoadingStates(Array(processedImages.length).fill(true))
-    }, [product._id, processedImages.length])
 
     useEffect(() => {
       dispatch(cartActions.initializeCart())
@@ -612,13 +704,11 @@ const ProductCardSlider = memo(
     const handleAddToCart = async () => {
       if (!isSync) return
 
-      // If product has variants, show modal instead of directly adding to cart
       if (hasVariants) {
         setShowModal(true)
         return
       }
 
-      // For products without variants, add directly to cart
       try {
         setIsSync(false)
         dispatch(
@@ -664,38 +754,120 @@ const ProductCardSlider = memo(
       })
     }
 
-    const handleImageError = () => {
-      setImageError(true)
-      setIsImageLoaded(false)
-    }
-
-    const handleImageLoad = (index = 0) => {
-      setIsImageLoaded(true)
+    const handleImageLoad = useCallback((index = 0) => {
       setImageLoadingStates((prev) => {
         const newStates = [...prev]
         newStates[index] = false
         return newStates
       })
-    }
+    }, [])
 
-    // Preload first image for better performance
-    useEffect(() => {
-      if (processedImages.length > 0 && priority) {
-        const img = new window.Image()
-        img.src = processedImages[0]
+    const handleImageError = useCallback(
+      (index = 0) => {
+        console.error(
+          `Image failed to load at index ${index}:`,
+          signedImageUrls[index]
+        )
+        // You could implement individual image retry logic here
+      },
+      [signedImageUrls]
+    )
+
+    // Enhanced OptimizedImage component with better error handling
+    const OptimizedImage = memo(
+      ({
+        src,
+        alt,
+        index,
+        className = '',
+      }: {
+        src: string
+        alt: string
+        index: number
+        className?: string
+      }) => {
+        const [hasError, setHasError] = useState(false)
+
+        const handleError = useCallback(() => {
+          setHasError(true)
+          handleImageError(index)
+        }, [index])
+
+        const handleLoad = useCallback(() => {
+          setHasError(false)
+          handleImageLoad(index)
+        }, [index])
+
+        if (hasError) {
+          return (
+            <div className='w-full h-full flex items-center justify-center bg-gray-100'>
+              <ImageFallback message='Image failed to load' />
+            </div>
+          )
+        }
+
+        return (
+          <div className={`relative w-full h-full ${className}`}>
+            {/* Loading skeleton */}
+            {imageLoadingStates[index] && (
+              <div className='absolute inset-0 z-10'>
+                <ImageSkeleton />
+              </div>
+            )}
+
+            {/* Enhanced image rendering with better error handling */}
+            {src.includes('amazonaws.com') ||
+            src.includes('X-Amz-Signature') ? (
+              <img
+                src={src}
+                alt={alt}
+                className='object-contain transition-all duration-500 group-hover:scale-105 p-3 sm:p-4 w-full h-full'
+                style={{
+                  opacity: imageLoadingStates[index] ? 0 : 1,
+                  objectPosition: 'center',
+                }}
+                onLoad={handleLoad}
+                onError={handleError}
+                loading={priority && index === 0 ? 'eager' : 'lazy'}
+                decoding='async'
+              />
+            ) : (
+              <Image
+                src={src}
+                alt={alt}
+                fill
+                sizes={getSizesAttribute()}
+                className='object-contain transition-all duration-500 group-hover:scale-105 p-3 sm:p-4'
+                style={{
+                  opacity: imageLoadingStates[index] ? 0 : 1,
+                  objectPosition: 'center',
+                }}
+                priority={priority && index === 0}
+                onLoad={handleLoad}
+                onError={handleError}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                quality={85} // Slightly reduced for better performance
+                placeholder='blur'
+                blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
+              />
+            )}
+          </div>
+        )
       }
-    }, [processedImages, priority])
+    )
+
+    OptimizedImage.displayName = 'OptimizedImage'
 
     return (
       <>
         <Card
           key={product._id}
-          className={`group hover:shadow-xl hover:shadow-black/5 transition-all duration-300 hover:-translate-y-1 h-full overflow-hidden border-0 shadow-sm bg-white w-full min-w-[240px] max-w-md mx-auto ${className}`}
+          className={`group hover:shadow-xl hover:shadow-black/5 transition-all duration-300 hover:-translate-y-1 h-full overflow-hidden border-0 shadow-sm bg-white w-full min-w-[256px] max-w-lg mx-auto ${className}`}
         >
           <div className='flex flex-col justify-between h-full w-full'>
-            {/* Enhanced Image Container with increased height and gray background */}
+            {/* Enhanced Image Container */}
             <div className='relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 aspect-[4/5] w-full min-h-[280px] max-h-[400px] rounded-t-lg'>
-              {/* Enhanced discount badge with modern styling */}
+              {/* Discount badge */}
               {product.discount && product.discount > 0 && (
                 <div className='absolute top-3 left-3 z-20'>
                   <div className='bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-lg backdrop-blur-sm'>
@@ -704,7 +876,7 @@ const ProductCardSlider = memo(
                 </div>
               )}
 
-              {/* Enhanced wishlist button */}
+              {/* Wishlist button */}
               <Button
                 variant='ghost'
                 size='icon'
@@ -717,100 +889,55 @@ const ProductCardSlider = memo(
 
               <Link
                 href={`/product/${product._id}`}
-                className='block w-full h-full relative'
+                className='block w-full h-full relative group/image'
               >
-                {hasImages && !imageError ? (
-                  processedImages.length > 1 ? (
-                    <div className='relative w-full h-full'>
-                      <CustomSlider
-                        options={{
-                          loop: true,
-                          align: 'center',
-                          dragFree: true,
-                        }}
-                        autoplay={true}
-                        autoplayDelay={4000}
-                        classNames={{
-                          outerWrapper:
-                            'rounded-t-lg overflow-hidden w-full h-full',
-                        }}
-                      >
-                        {processedImages.map((imageUrl, index) => (
-                          <div
-                            key={`${product._id}-${index}`}
-                            className='relative w-full h-full flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100'
-                          >
-                            {/* Enhanced loading skeleton */}
-                            {imageLoadingStates[index] && (
-                              <div className='absolute inset-0 z-10'>
-                                <ImageSkeleton />
-                              </div>
-                            )}
-
-                            <Image
-                              src={imageUrl}
-                              alt={`${product.name} - ${index + 1}`}
-                              fill
-                              sizes={getSizesAttribute(true)}
-                              className='object-contain transition-all duration-500 group-hover:scale-105 p-3 sm:p-4'
-                              style={{
-                                opacity: imageLoadingStates[index] ? 0 : 1,
-                                objectPosition: 'center',
-                              }}
-                              priority={priority && index === 0}
-                              onLoad={() => handleImageLoad(index)}
-                              onError={handleImageError}
-                              loading={index === 0 ? 'eager' : 'lazy'}
-                              quality={90}
-                              placeholder='blur'
-                              blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
-                            />
-                          </div>
-                        ))}
-                      </CustomSlider>
-                    </div>
-                  ) : (
-                    <div className='relative w-full h-full bg-gradient-to-br from-gray-50 to-gray-100'>
-                      {/* Enhanced loading skeleton for single image */}
-                      {!isImageLoaded && (
-                        <div className='absolute inset-0 z-10'>
-                          <ImageSkeleton />
-                        </div>
-                      )}
-
-                      <Image
-                        src={processedImages[0]}
+                {/* Enhanced loading and error states */}
+                {isLoadingImages ? (
+                  <div className='w-full h-full'>
+                    <ImageSkeleton />
+                  </div>
+                ) : imageError || !signedImageUrls.length ? (
+                  <ImageFallback
+                    message={
+                      imageError
+                        ? 'Failed to load images'
+                        : 'No images available'
+                    }
+                    onRetry={handleRetryImages}
+                    showRetry={imageError && retryCount < 3}
+                  />
+                ) : (
+                  <div className='relative w-full h-full bg-gradient-to-br from-gray-50 to-gray-100'>
+                    {/* Primary image */}
+                    <div className='absolute inset-0 w-full h-full'>
+                      <OptimizedImage
+                        src={signedImageUrls[0]}
                         alt={product.name}
-                        fill
-                        sizes={getSizesAttribute(false)}
-                        className='object-contain transition-all duration-500 group-hover:scale-105 p-3 sm:p-4'
-                        style={{
-                          opacity: isImageLoaded ? 1 : 0,
-                          objectPosition: 'center',
-                        }}
-                        priority={priority}
-                        onLoad={() => handleImageLoad()}
-                        onError={handleImageError}
-                        loading={priority ? 'eager' : 'lazy'}
-                        quality={90}
-                        placeholder='blur'
-                        blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
+                        index={0}
                       />
                     </div>
-                  )
-                ) : (
-                  <ImageFallback />
+
+                    {/* Secondary image on hover */}
+                    {signedImageUrls.length > 1 && (
+                      <div className='absolute inset-0 w-full h-full opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 ease-in-out'>
+                        <OptimizedImage
+                          src={signedImageUrls[1]}
+                          alt={`${product.name} - alternative view`}
+                          index={1}
+                        />
+                      </div>
+                    )}
+                  </div>
                 )}
               </Link>
             </div>
 
-            {/* Enhanced Content Container with better spacing */}
+            {/* Content Container - Rest remains the same */}
             <div className='p-5 sm:p-6 flex flex-col bg-white flex-grow'>
               <Link
                 href={`/product/${product._id}`}
                 className='flex-grow space-y-2.5'
               >
-                {/* Enhanced category display */}
                 <p className='text-xs sm:text-sm text-gray-500 font-semibold capitalize tracking-wide truncate'>
                   {typeof product.category === 'object' &&
                   product.category !== null
@@ -818,12 +945,10 @@ const ProductCardSlider = memo(
                     : categoryName || 'Category'}
                 </p>
 
-                {/* Enhanced product name with better typography */}
                 <h3 className='font-semibold mb-2 group-hover:text-[#3bb77e] capitalize transition-colors duration-300 line-clamp-2 text-sm sm:text-base leading-tight'>
                   {product.name}
                 </h3>
 
-                {/* Enhanced rating display */}
                 {product.rating && product.rating > 0 && (
                   <div className='flex items-center mb-3 space-x-2'>
                     <div className='flex items-center'>
@@ -847,7 +972,6 @@ const ProductCardSlider = memo(
                 )}
               </Link>
 
-              {/* Enhanced price and cart section */}
               <div className='flex items-center justify-between w-full mt-auto pt-4'>
                 <div className='flex-1 mr-3'>
                   <p className='font-bold text-xl sm:text-2xl text-[#3bb77e] truncate'>
@@ -890,7 +1014,6 @@ const ProductCardSlider = memo(
           </div>
         </Card>
 
-        {/* Add Product to Cart Modal */}
         <AddProductToCartModal
           product={product}
           isOpen={showModal}

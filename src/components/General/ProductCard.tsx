@@ -510,11 +510,10 @@
 // ProductCard.displayName = 'ProductCard'
 
 // export default ProductCard
-
 'use client'
 
 import { Product } from '@/lib/types'
-import React, { useEffect, useState, memo, useMemo } from 'react'
+import React, { useEffect, useState, memo, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Card } from '../ui/card'
@@ -533,6 +532,8 @@ import { useSession } from 'next-auth/react'
 import CartCounter from '../CartPage/CartCounter'
 import CustomSlider from './CustomSlider'
 import AddProductToCartModal from './AddProductsToCartModal'
+// Updated import to use the optimized batch fetcher
+import { fetchMultipleSignedImageUrls, preloadImages } from '@/lib/getImages'
 
 // Loading skeleton for images
 const ImageSkeleton = () => (
@@ -575,10 +576,12 @@ const ProductCard = memo(
   }: ProductCardProps) => {
     const isGrid = viewMode === 'grid'
     const [isSync, setIsSync] = useState(true)
-    const [isImageLoaded, setIsImageLoaded] = useState(false)
-    const [imageError, setImageError] = useState(false)
     const [imageLoadingStates, setImageLoadingStates] = useState<boolean[]>([])
     const [showModal, setShowModal] = useState(false)
+    const [signedImageUrls, setSignedImageUrls] = useState<string[]>([])
+    const [isLoadingImages, setIsLoadingImages] = useState(true)
+    const [imageError, setImageError] = useState(false)
+
     const dispatch = useAppDispatch()
     const { toast } = useToast()
     const { data: session } = useSession()
@@ -588,61 +591,112 @@ const ProductCard = memo(
       return product.variants && product.variants.length > 0
     }, [product.variants])
 
-    // Use useMemo to calculate hasImages whenever product changes
-    const hasImages = useMemo(() => {
-      return (
-        Array.isArray(product.images) &&
-        product.images.length > 0 &&
-        product.images.some((img) => !!img)
-      )
-    }, [product.images])
-
-    // Process images with optimization
-    const processedImages = useMemo(() => {
+    // Process original images array with better validation
+    const originalImages = useMemo(() => {
       if (!product.images) return []
 
       const imageArray = Array.isArray(product.images)
         ? product.images
         : [product.images]
+
+      // Filter out empty/invalid images and clean image names
       return imageArray
-        .filter((img) => !!img)
-        .map((image) => `${process.env.NEXT_PUBLIC_AWS_URL}/products/${image}`)
+        .filter(
+          (img) => img && typeof img === 'string' && img.trim().length > 0
+        )
+        .map((img) => img.trim())
     }, [product.images])
 
-    // Optimized sizes attribute for different layouts - Enhanced for better image quality
-    const getSizesAttribute = (isSlider = false) => {
+    const hasImages = useMemo(() => {
+      return originalImages.length > 0
+    }, [originalImages])
+
+    // Optimized image loading with batch fetching
+    const loadImages = useCallback(async () => {
+      if (!originalImages.length) {
+        setIsLoadingImages(false)
+        setImageError(false)
+        return
+      }
+
+      setIsLoadingImages(true)
+      setImageError(false)
+
+      try {
+        console.log(
+          `Loading images for product: ${product.name}`,
+          originalImages
+        )
+
+        // Use batch fetching for better performance
+        const imageRequests = originalImages.map((imageName) => ({
+          imageName,
+          folder: 'products',
+        }))
+
+        const results = await fetchMultipleSignedImageUrls(imageRequests)
+
+        // Extract valid URLs maintaining order
+        const validUrls: string[] = []
+        originalImages.forEach((imageName) => {
+          const cacheKey = `products/${imageName}`
+          const url = results[cacheKey]
+          if (url) {
+            validUrls.push(url)
+          }
+        })
+
+        if (validUrls.length > 0) {
+          setSignedImageUrls(validUrls)
+          setImageLoadingStates(Array(validUrls.length).fill(true))
+          console.log(
+            `Successfully loaded ${validUrls.length}/${originalImages.length} images for: ${product.name}`
+          )
+
+          // Preload first image if priority
+          if (priority && validUrls[0]) {
+            const img = new window.Image()
+            img.src = validUrls[0]
+          }
+        } else {
+          console.warn(`No valid images found for product: ${product.name}`)
+          setImageError(true)
+        }
+      } catch (error) {
+        console.error(
+          `Error loading images for product ${product.name}:`,
+          error
+        )
+        setImageError(true)
+      } finally {
+        setIsLoadingImages(false)
+      }
+    }, [product._id, product.name, originalImages, priority])
+
+    // Load images on mount and when dependencies change
+    useEffect(() => {
+      loadImages()
+    }, [loadImages])
+
+    // Optimized sizes attribute for different layouts
+    const getSizesAttribute = useCallback(() => {
       if (isGrid) {
-        return isSlider
-          ? '(max-width: 375px) 95vw, (max-width: 640px) 85vw, (max-width: 768px) 50vw, (max-width: 1024px) 35vw, (max-width: 1280px) 28vw, 22vw'
-          : '(max-width: 375px) 95vw, (max-width: 640px) 85vw, (max-width: 768px) 50vw, (max-width: 1024px) 35vw, (max-width: 1280px) 28vw, 22vw'
+        return '(max-width: 375px) 95vw, (max-width: 640px) 85vw, (max-width: 768px) 50vw, (max-width: 1024px) 35vw, (max-width: 1280px) 28vw, 22vw'
       }
       return '(max-width: 375px) 95vw, (max-width: 640px) 85vw, (max-width: 768px) 50vw, (max-width: 1024px) 40vw, 35vw'
-    }
+    }, [isGrid])
 
     const cartProducts = useAppSelector((state) => state.cart.products)
 
-    // For products without variants, find cart item normally
-    // For products with variants, we'll handle this in the modal
     const cartItem = useMemo(() => {
       if (hasVariants) {
-        // For products with variants, we can't determine the exact cart item here
-        // since we don't know which variant the user wants to add
-        // Return any cart item for this product to show that something is in cart
         return cartProducts.find((item) => item.product?._id === product._id)
       } else {
-        // For products without variants, find exact match
         return cartProducts.find(
           (item) => item.product?._id === product._id && !item.variant
         )
       }
     }, [cartProducts, product._id, hasVariants])
-
-    // Reset image states when product changes
-    useEffect(() => {
-      setImageError(false)
-      setIsImageLoaded(false)
-      setImageLoadingStates(Array(processedImages.length).fill(true))
-    }, [product._id, processedImages.length])
 
     useEffect(() => {
       dispatch(cartActions.initializeCart())
@@ -651,13 +705,11 @@ const ProductCard = memo(
     const handleAddToCart = async () => {
       if (!isSync) return
 
-      // If product has variants, show modal instead of directly adding to cart
       if (hasVariants) {
         setShowModal(true)
         return
       }
 
-      // For products without variants, add directly to cart
       try {
         setIsSync(false)
         dispatch(
@@ -703,27 +755,108 @@ const ProductCard = memo(
       })
     }
 
-    const handleImageError = () => {
-      setImageError(true)
-      setIsImageLoaded(false)
-    }
-
-    const handleImageLoad = (index = 0) => {
-      setIsImageLoaded(true)
+    const handleImageLoad = useCallback((index = 0) => {
       setImageLoadingStates((prev) => {
         const newStates = [...prev]
         newStates[index] = false
         return newStates
       })
-    }
+    }, [])
 
-    // Preload first image for better performance
-    useEffect(() => {
-      if (processedImages.length > 0 && priority) {
-        const img = new window.Image()
-        img.src = processedImages[0]
+    const handleImageError = useCallback(
+      (index = 0) => {
+        console.error(
+          `Image failed to load at index ${index}:`,
+          signedImageUrls[index]
+        )
+      },
+      [signedImageUrls]
+    )
+
+    // Enhanced OptimizedImage component
+    const OptimizedImage = memo(
+      ({
+        src,
+        alt,
+        index,
+        className = '',
+      }: {
+        src: string
+        alt: string
+        index: number
+        className?: string
+      }) => {
+        const [hasError, setHasError] = useState(false)
+
+        const handleError = useCallback(() => {
+          setHasError(true)
+          handleImageError(index)
+        }, [index])
+
+        const handleLoad = useCallback(() => {
+          setHasError(false)
+          handleImageLoad(index)
+        }, [index])
+
+        if (hasError) {
+          return (
+            <div className='w-full h-full flex items-center justify-center bg-gray-100'>
+              <ImageFallback message='Image failed to load' />
+            </div>
+          )
+        }
+
+        return (
+          <div className={`relative w-full h-full ${className}`}>
+            {/* Loading skeleton */}
+            {imageLoadingStates[index] && (
+              <div className='absolute inset-0 z-10'>
+                <ImageSkeleton />
+              </div>
+            )}
+
+            {/* Enhanced image rendering */}
+            {src.includes('amazonaws.com') ||
+            src.includes('X-Amz-Signature') ? (
+              <img
+                src={src}
+                alt={alt}
+                className='object-contain transition-all duration-500 group-hover:scale-105 p-3 sm:p-4 w-full h-full'
+                style={{
+                  opacity: imageLoadingStates[index] ? 0 : 1,
+                  objectPosition: 'center',
+                }}
+                onLoad={handleLoad}
+                onError={handleError}
+                loading={priority && index === 0 ? 'eager' : 'lazy'}
+                decoding='async'
+              />
+            ) : (
+              <Image
+                src={src}
+                alt={alt}
+                fill
+                sizes={getSizesAttribute()}
+                className='object-contain transition-all duration-500 group-hover:scale-105 p-3 sm:p-4'
+                style={{
+                  opacity: imageLoadingStates[index] ? 0 : 1,
+                  objectPosition: 'center',
+                }}
+                priority={priority && index === 0}
+                onLoad={handleLoad}
+                onError={handleError}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                quality={85}
+                placeholder='blur'
+                blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
+              />
+            )}
+          </div>
+        )
       }
-    }, [processedImages, priority])
+    )
+
+    OptimizedImage.displayName = 'OptimizedImage'
 
     return (
       <>
@@ -738,7 +871,7 @@ const ProductCard = memo(
               isGrid ? '' : 'sm:flex-row items-stretch'
             }`}
           >
-            {/* Enhanced Image Container with increased width and gray background */}
+            {/* Enhanced Image Container */}
             <div
               className={`relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 ${
                 isGrid
@@ -746,7 +879,7 @@ const ProductCard = memo(
                   : 'w-full sm:w-2/5 min-h-[300px] max-h-[360px] sm:min-h-[280px] sm:max-h-[340px]'
               } rounded-t-lg`}
             >
-              {/* Enhanced discount badge with modern styling */}
+              {/* Discount badge */}
               {product.discount && product.discount > 0 && (
                 <div className='absolute top-3 left-3 z-20'>
                   <div className='bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-lg backdrop-blur-sm'>
@@ -755,7 +888,7 @@ const ProductCard = memo(
                 </div>
               )}
 
-              {/* Enhanced wishlist button */}
+              {/* Wishlist button */}
               <Button
                 variant='ghost'
                 size='icon'
@@ -768,94 +901,48 @@ const ProductCard = memo(
 
               <Link
                 href={`/product/${product._id}`}
-                className='block w-full h-full relative'
+                className='block w-full h-full relative group/image'
               >
-                {hasImages && !imageError ? (
-                  processedImages.length > 1 ? (
-                    <div className='relative w-full h-full'>
-                      <CustomSlider
-                        options={{
-                          loop: true,
-                          align: 'center',
-                          dragFree: true,
-                        }}
-                        autoplay={true}
-                        autoplayDelay={4000}
-                        classNames={{
-                          outerWrapper:
-                            'rounded-t-lg overflow-hidden w-full h-full',
-                        }}
-                      >
-                        {processedImages.map((imageUrl, index) => (
-                          <div
-                            key={`${product._id}-${index}`}
-                            className='relative w-full h-full flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100'
-                          >
-                            {/* Enhanced loading skeleton */}
-                            {imageLoadingStates[index] && (
-                              <div className='absolute inset-0 z-10'>
-                                <ImageSkeleton />
-                              </div>
-                            )}
-
-                            <Image
-                              src={imageUrl}
-                              alt={`${product.name} - ${index + 1}`}
-                              fill
-                              sizes={getSizesAttribute(true)}
-                              className='object-contain transition-all duration-500 group-hover:scale-105 p-3 sm:p-4'
-                              style={{
-                                opacity: imageLoadingStates[index] ? 0 : 1,
-                                objectPosition: 'center',
-                              }}
-                              priority={priority && index === 0}
-                              onLoad={() => handleImageLoad(index)}
-                              onError={handleImageError}
-                              loading={index === 0 ? 'eager' : 'lazy'}
-                              quality={90}
-                              placeholder='blur'
-                              blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
-                            />
-                          </div>
-                        ))}
-                      </CustomSlider>
-                    </div>
-                  ) : (
-                    <div className='relative w-full h-full bg-gradient-to-br from-gray-50 to-gray-100'>
-                      {/* Enhanced loading skeleton for single image */}
-                      {!isImageLoaded && (
-                        <div className='absolute inset-0 z-10'>
-                          <ImageSkeleton />
-                        </div>
-                      )}
-
-                      <Image
-                        src={processedImages[0]}
+                {/* Enhanced loading and error states */}
+                {isLoadingImages ? (
+                  <div className='w-full h-full'>
+                    <ImageSkeleton />
+                  </div>
+                ) : imageError || !signedImageUrls.length ? (
+                  <ImageFallback
+                    message={
+                      imageError
+                        ? 'Failed to load images'
+                        : 'No images available'
+                    }
+                  />
+                ) : (
+                  <div className='relative w-full h-full bg-gradient-to-br from-gray-50 to-gray-100'>
+                    {/* Primary image */}
+                    <div className='absolute inset-0 w-full h-full'>
+                      <OptimizedImage
+                        src={signedImageUrls[0]}
                         alt={product.name}
-                        fill
-                        sizes={getSizesAttribute(false)}
-                        className='object-contain transition-all duration-500 group-hover:scale-105 p-3 sm:p-4'
-                        style={{
-                          opacity: isImageLoaded ? 1 : 0,
-                          objectPosition: 'center',
-                        }}
-                        priority={priority}
-                        onLoad={() => handleImageLoad()}
-                        onError={handleImageError}
-                        loading={priority ? 'eager' : 'lazy'}
-                        quality={90}
-                        placeholder='blur'
-                        blurDataURL='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyuwjA'
+                        index={0}
                       />
                     </div>
-                  )
-                ) : (
-                  <ImageFallback />
+
+                    {/* Secondary image on hover */}
+                    {signedImageUrls.length > 1 && (
+                      <div className='absolute inset-0 w-full h-full opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 ease-in-out'>
+                        <OptimizedImage
+                          src={signedImageUrls[1]}
+                          alt={`${product.name} - alternative view`}
+                          index={1}
+                        />
+                      </div>
+                    )}
+                  </div>
                 )}
               </Link>
             </div>
 
-            {/* Enhanced Content Container with better spacing */}
+            {/* Enhanced Content Container */}
             <div
               className={`p-4 sm:p-5 flex flex-col bg-white ${
                 isGrid ? 'flex-grow' : 'w-full sm:w-3/5 h-full justify-between'
@@ -865,7 +952,7 @@ const ProductCard = memo(
                 href={`/product/${product._id}`}
                 className='flex-grow space-y-2'
               >
-                {/* Enhanced category display */}
+                {/* Category display */}
                 <p className='text-xs sm:text-sm text-gray-500 font-semibold capitalize tracking-wide truncate'>
                   {typeof product.category === 'object' &&
                   product.category !== null
@@ -873,18 +960,19 @@ const ProductCard = memo(
                     : categoryName || 'Category'}
                 </p>
 
-                {/* Enhanced product name with better typography */}
+                {/* Product name */}
                 <h3 className='font-semibold mb-2 group-hover:text-[#3bb77e] capitalize transition-colors duration-300 line-clamp-2 text-sm leading-tight'>
                   {product.name}
                 </h3>
 
+                {/* Description for list view */}
                 {!isGrid && (
                   <p className='text-gray-600 mb-4 line-clamp-2 text-sm leading-relaxed'>
                     {product.description}
                   </p>
                 )}
 
-                {/* Enhanced rating display */}
+                {/* Rating display */}
                 {product.rating && product.rating > 0 && (
                   <div className='flex items-center mb-3 space-x-2'>
                     <div className='flex items-center'>
@@ -908,7 +996,7 @@ const ProductCard = memo(
                 )}
               </Link>
 
-              {/* Enhanced price and cart section */}
+              {/* Price and cart section */}
               <div className='flex items-center justify-between w-full mt-auto pt-3'>
                 <div className='flex-1 mr-3'>
                   <p className='font-bold text-lg sm:text-xl text-[#3bb77e] truncate'>
@@ -951,7 +1039,6 @@ const ProductCard = memo(
           </div>
         </Card>
 
-        {/* Add Product to Cart Modal */}
         <AddProductToCartModal
           product={product}
           isOpen={showModal}

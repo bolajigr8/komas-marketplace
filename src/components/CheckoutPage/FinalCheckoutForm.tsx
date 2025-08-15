@@ -212,8 +212,8 @@ const FinalCheckoutForm = ({
         redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/verify-payment/`,
       }
 
-      console.log('Payment Data:', paymentData)
-      console.log('redirect url:', process.env.NEXT_PUBLIC_APP_URL)
+      // console.log('Payment Data:', paymentData)
+      // console.log('redirect url:', process.env.NEXT_PUBLIC_APP_URL)
 
       const response = await initiatePayment(paymentData)
 
