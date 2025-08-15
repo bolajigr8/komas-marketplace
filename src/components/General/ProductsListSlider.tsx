@@ -68,7 +68,7 @@ const ProductsListSlider = ({
                   lg:w-[calc(23.256%-1.5rem)]
                   xl:w-[calc(19.231%-1.5rem)]
                   flex-shrink-0
-                  min-w-[240px]
+                  min-w-[270px]
                 `,
                 customArrowWrapper: 'hidden',
               }}

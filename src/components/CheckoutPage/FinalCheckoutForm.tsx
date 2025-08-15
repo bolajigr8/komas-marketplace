@@ -209,7 +209,11 @@ const FinalCheckoutForm = ({
         amount: amountAsInteger.toString(), // Now it's an integer as a string
         email: email.trim(),
         currency: 'NGN' as const,
+        redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}`,
       }
+
+      console.log('Payment Data:', paymentData)
+      console.log('redirect url:', process.env.NEXT_PUBLIC_APP_URL)
 
       const response = await initiatePayment(paymentData)
 

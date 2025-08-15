@@ -1,7 +1,6 @@
 const imageUrlCache: Record<string, string> = {}
 
-// This utility function fetches a signed image URL from the backend and it Supports dynamic folders
-
+// This utility function fetches a signed image URL from the backend and supports dynamic folders
 export const fetchSignedImageUrl = async (
   imageName: string,
   folder: string
@@ -13,9 +12,10 @@ export const fetchSignedImageUrl = async (
   }
 
   try {
-    const response = await fetch(
-      `https://backendapi-3ms0.onrender.com/api/v1/2401/file/get/${folder}/${imageName}`
-    )
+    const baseUrl =
+      process.env.NEXT_PUBLIC_API_URL ||
+      'https://backendapi-3ms0.onrender.com/api/v1/2401'
+    const response = await fetch(`${baseUrl}/file/get/${folder}/${imageName}`)
 
     if (!response.ok) throw new Error('Failed to fetch image URL')
 

@@ -19,9 +19,10 @@ export const metadata: Metadata = {
   },
   description: 'An e-commerce web application',
   icons: {
-    icon: [{ url: '/favicon-196.png', sizes: '196x196', type: 'image/png' }],
+    icon: [{ url: '/faviconNB.png', sizes: '196x196', type: 'image/png' }],
     apple: [{ url: '/apple-icon-180.png' }],
   },
+
   // appleTouchIcon: "/apple-icon-180.png",
   appleWebApp: {
     capable: true,
