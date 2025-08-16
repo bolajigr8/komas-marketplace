@@ -63,10 +63,10 @@ const nextConfig = {
       },
     ]
   },
-  // eslint: {
-  //   //  Remove during final build
-  //   ignoreDuringBuilds: true,
-  // },
+  eslint: {
+    //  Remove during final build
+    ignoreDuringBuilds: true,
+  },
 }
 
 export default nextConfig

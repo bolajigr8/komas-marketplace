@@ -83,6 +83,7 @@ export interface ProductVariant {
 // Updated Product interface with variants
 export interface Product extends BaseData {
   price: number
+  id?: string
   priceWithMarkup: number
   length: number
   breadth: number

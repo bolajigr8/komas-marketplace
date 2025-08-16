@@ -651,7 +651,7 @@ const PickupStations: React.FC<PickupStationProps> = ({
                 className='w-full sm:w-auto order-1 sm:order-2'
               >
                 {selectedStation
-                  ? `Confirm: ${selectedStation.name}`
+                  ? `Confirm: pickup station`
                   : 'Select a Station First'}
               </Button>
             </ModalFooter>

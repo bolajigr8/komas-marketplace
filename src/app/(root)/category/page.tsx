@@ -996,7 +996,7 @@ const AllCategoriesPage = async ({ searchParams }: PageProps) => {
     // Get products for current page, sorted by newest first
     const response = await getProducts({
       page: currentPage,
-      perPage: itemsPerPage,
+      // perPage: itemsPerPage,
     })
     const fetchedProducts = response.data?.products || []
 
@@ -1008,6 +1008,11 @@ const AllCategoriesPage = async ({ searchParams }: PageProps) => {
     })
 
     const totalPages = Math.ceil(totalCount / itemsPerPage)
+
+    // console.log('currentPage', currentPage)
+    // console.log('itemsPerPage', itemsPerPage)
+    // console.log('fetchedProducts', fetchedProducts)
+    // console.log('sortedProducts', sortedProducts)
 
     return (
       <AllCategoriesClient
