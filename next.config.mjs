@@ -12,6 +12,11 @@ const nextConfig = {
         hostname: 'backendapi-prod.onrender.com',
         pathname: '/api/v1/2401/file/get/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'backendapi-3ms0.onrender.com',
+        pathname: '/api/v1/2401/file/get/**',
+      },
     ],
   },
   async headers() {
