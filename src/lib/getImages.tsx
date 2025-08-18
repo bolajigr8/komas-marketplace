@@ -57,9 +57,10 @@ class ImageUrlManager {
   private cacheTimestamps: Record<string, number> = {}
 
   private getBaseUrl(): string {
+    console.log('env for the images', process.env.NEXT_PUBLIC_API_URL)
     return (
       process.env.NEXT_PUBLIC_API_URL ||
-      'https://backendapi-3ms0.onrender.com/api/v1/2401'
+      'https://backendapi-prod.onrender.com/api/v1/2401'
     )
   }
 
