@@ -7,11 +7,7 @@ const nextConfig = {
         hostname: 'komas500.s3.eu-north-1.amazonaws.com',
         port: '',
       },
-      {
-        protocol: 'https',
-        hostname: 'backendapi-prod.onrender.com',
-        pathname: '/api/v1/2401/file/get/**',
-      },
+
       {
         protocol: 'https',
         hostname: 'backendapi-3ms0.onrender.com',
