@@ -14,10 +14,12 @@ const quicksand = Quicksand({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: {
-    default: 'KOMAS500',
+    default:
+      'Komas500 | Buy Cosmetics, Fragrances & Personal Care Products Online in Nigeria and beyond ',
     template: '%s | KOMAS500',
   },
-  description: 'An e-commerce web application',
+  description:
+    'Shop quality cosmetics, fragrances, skincare, and personal hygiene products at Komas500. Discover top brands, wholesale deals, and affordable beauty essentials with fast delivery across Nigeria.',
   icons: {
     icon: [{ url: '/faviconNB.png', sizes: '196x196', type: 'image/png' }],
     apple: [{ url: '/apple-icon-180.png' }],

@@ -9,7 +9,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'backendapi-3ms0.onrender.com',
+        hostname: 'backendapi-prod.onrender.com',
         pathname: '/api/v1/2401/file/get/**',
       },
     ],
